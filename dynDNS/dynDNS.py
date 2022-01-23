@@ -45,7 +45,7 @@ def logoutFromAPI(apiSettings):
 
 
 def updateDNSRecord(apiSettings, currIP, domain, record, hostname):
-    dnsRecordSet = {'dnsrecords': [{"id":record, "hostname": hostname, "type": "CNAME", "priority": "0", "destination": currIP, "deleterecord": False, "state": "yes"}]}
+    dnsRecordSet = {'dnsrecords': [{"id":record, "hostname": hostname, "type": "CNAME", "priority": "0", "destination": currIP, "deleterecord": "false", "state": "yes"}]}
     jsonData = {'domainname': domain, 'dnsrecordset': dnsRecordSet, 'customernumber':apiSettings['user'], 'apikey':apiSettings['apikey'], 'apisessionid':apiSettings['apisessionid']}
     print(jsonData)
     callPhpApi(apiSettings['api'], 'updateDnsRecords', jsonData)
