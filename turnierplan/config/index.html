@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="de">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" type="text/css" href="../assets/bootstrap-grid.min.css">
+        <link rel="stylesheet" type="text/css" href="../assets/bootstrap.min.css">
+        <script src="../assets/bootstrap.bundle.min.js"></script>
+
+        <title>Turnierplan</title>
+    </head>
+    <body>
+        <div>
+            <script>
+                window.onload = function() {
+                    saveGroups();
+                    saveSettings();
+                    saveResults();
+                };
+            </script>
+            <script>
+                var teamCount;
+                var teamPlayerCount;
+                const alpha = ["A", "B", "C", "D", "E", "F", "G", "H", "I"]
+                function generateGroups(){
+                    teamCount = document.getElementById("countTeams").value;
+                    teamPlayerCount = document.getElementById("countTeamsPlayer").value;
+                    document.getElementById("group-tables").innerHTML = "";
+                    for (let i = 0; i<teamCount; i++){
+                        const groupcol = document.createElement('div');
+                        groupcol.className="col";
+                        const groupcolTable = document.createElement('table');
+                        groupcolTable.className="table";
+                        groupcol.appendChild(groupcolTable);
+                        const groupcolTableHead = document.createElement('thead');
+                        const groupcolTableHeadRow = document.createElement('tr');
+                        const groupcolTableHeadRowTitle = document.createElement('th');
+                        groupcolTableHeadRowTitle.innerHTML = "Gruppe "+alpha[i];
+                        groupcolTableHeadRow.appendChild(groupcolTableHeadRowTitle);
+                        groupcolTableHead.appendChild(groupcolTableHeadRow);
+                        groupcolTable.appendChild(groupcolTableHead);
+                        const groupcolTableBody = document.createElement('tbody');
+                        for (let j = 0; j<teamPlayerCount; j++){
+                            const groupcolTableBodyRow = document.createElement('tr');
+                            const groupcolTableBodyRowInner = document.createElement('td');
+                            const groupcolTableBodyRowInnerInput = document.createElement('input');
+                            groupcolTableBodyRowInnerInput.id = "group"+alpha[i]+"_team"+j ;
+                            groupcolTableBodyRowInnerInput.className = "group"+alpha[i];
+                            groupcolTableBodyRowInner.appendChild(groupcolTableBodyRowInnerInput);
+                            groupcolTableBodyRow.appendChild(groupcolTableBodyRowInner);
+                            groupcolTableBody.appendChild(groupcolTableBodyRow);
+                        }
+                        groupcolTable.appendChild(groupcolTableBody);
+                        document.getElementById("group-tables").appendChild(groupcol);
+                    }
+                    document.getElementById("group-tables-save").disabled = false;
+                }
+                function saveGroups(){
+                    console.log("fireGroup", teamCount, teamPlayerCount)
+                    const game = {}
+                    for (let i = 0; i<teamCount; i++){
+                        const group = document.getElementsByClassName("group"+alpha[i])
+                        game["group"+alpha[i]] = []
+                        for (let j = 0; j<teamPlayerCount; j++){
+                            game["group"+alpha[i]].push(group[j].value)
+                        }
+                    }
+                    console.log(game)
+                    localStorage.setItem("turnierplan-game", JSON.stringify(game))
+                }
+                function saveSettings(){
+                    const settings = {
+                        groupBreakCounter: document.getElementById("groupBreakCounter").value,
+                        groupGameTime: document.getElementById("groupGameTime").value,
+                        finalsGameTime: document.getElementById("finalsGameTime").value,
+                        startTime: document.getElementById("startTime").value,
+                        fieldCount: document.getElementById("fieldCount").value,
+                        KILLSWITCH: document.getElementById("KILLSWITCH").checked
+                    }
+                    let tempDate = new Date();
+                    tempDate.setHours(settings.startTime.split(":")[0])
+                    tempDate.setMinutes(settings.startTime.split(":")[1])
+                    settings.startTime = tempDate
+
+                    localStorage.setItem("turnierplan-settings", JSON.stringify(settings))
+                }
+                function saveResults(){
+                    const gameResults = {
+                        groupPhase: {},quarters:{ },halfs:{},third:{},finals:{}    
+                    }
+                    localStorage.setItem("turnierplan-gameResults", JSON.stringify(gameResults))
+                }
+            </script>
+            <div class="container">
+                <div class="row">
+                    <div class="col">
+                        <h1 style="text-align: center;">Turnierplan Config</h1>
+                        <a class="btn btn-primary float-end" href="../" target="_blank">Spielplan</a>
+                    </div>
+                </div>
+                <br />
+                <div class="row">
+                    <div class="col">
+                        <div class="accordion accordion-flush" id="accordionFlushExample">
+                            <div class="accordion-item">
+                              <h2 class="accordion-header" id="flush-headingOne">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
+                                  Einstellungen
+                                </button>
+                              </h2>
+                              <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+                                <div class="accordion-body">
+                                    <div class="container">
+                                        <div class="row">
+                                            <div class="col-12"><label>Anzahl Spielfelder: <input type="number" style="width: 80px;" id="fieldCount" value="5"/></label></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-6"><label>Pausenlänge: <input type="number" style="width: 80px;" id="groupBreakCounter" value="2"/>x Spielzeit</label></div>
+                                            <div class="col-6"><label>Startzeit: <input type="time" id="startTime" value="18:00:00" /></label></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-6"><label>Spielzeit je Spiel (Gruppenphase): <input type="number" style="width: 80px;" id="groupGameTime" value="10"/>Min.</label></div>
+                                            <div class="col-6"><label>Spielzeit je Spiel (Finale): <input type="number" style="width: 80px;" id="finalsGameTime" value="15"/>Min.</label></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col"><label class="float-end" style="color: red;"><input type="checkbox" id="KILLSWITCH" /> KILLSWITCH</label></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col">
+                                                <button class="btn btn-primary float-end" id="settings-save" onclick="saveSettings()">Speichern</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="accordion-item">
+                              <h2 class="accordion-header" id="flush-headingTwo">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo" aria-expanded="false" aria-controls="flush-collapseTwo">
+                                  Teams
+                                </button>
+                              </h2>
+                              <div id="flush-collapseTwo" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo" data-bs-parent="#accordionFlushExample">
+                                <div class="accordion-body">
+                                    <div class="container">
+                                        <div class="row">
+                                            <div class="col">
+                                                <label>Anzahl Teams: <input type="number" style="width: 80px;" id="countTeams" value="2"/></label>
+                                                <label>Anzahl Spieler je Team: <input type="number" style="width: 80px;" id="countTeamsPlayer" value="3"/></label>
+                                                <button class="btn btn-primary" onclick="generateGroups()">Set</button>
+                                            </div>
+                                        </div>
+                                        <div class="row" id="group-tables" style="text-align: center;">
+                                        </div>
+                                        <div class="row">
+                                            <div class="col">
+                                                <button class="btn btn-primary float-end" id="group-tables-save" onclick="saveGroups()" disabled>Speichern</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="accordion-item">
+                              <h2 class="accordion-header" id="flush-headingThree">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseThree" aria-expanded="false" aria-controls="flush-collapseThree">
+                                  Ergebnisse
+                                </button>
+                              </h2>
+                              <div id="flush-collapseThree" class="accordion-collapse collapse show" aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
+                                <div class="accordion-body">
+                                    <div class="container">
+                                        <div class="row" id="results-tables" style="text-align: center;">
+                                        </div>
+                                        <div class="row">
+                                            <div class="col">
+                                                <button class="btn btn-primary float-end" id="results-save" onclick="saveResults()">Speichern</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

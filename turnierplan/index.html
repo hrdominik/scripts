@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="de">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" type="text/css" href="./assets/bootstrap-grid.min.css">
+        <link rel="stylesheet" type="text/css" href="./assets/bootstrap.min.css">
+
+        <title>Turnierplan</title>
+    </head>
+    <body>
+        <div>
+            <script>
+                var KILLSWITCH = false;
+                function killKickerPlan(dom){
+                    if (dom){
+                        const kickerPlan = document.getElementById('kickerPlan');
+                        kickerPlan.remove();
+                        const kickerPlanError = document.getElementById('kickerPlanError');
+                        kickerPlanError.style.display = 'block';
+                    } else {
+                        // alert('Es ist ein Fehler mit dem Turnierplan aufgetreten, bitte achte auf die Ansagen des Turnierleiters. Du kannst den Turnierplan und die Ergebnisse weiterhin beim Turnierleiter erhalten.')
+                        KILLSWITCH = true;
+                    }
+                    
+                }
+            </script>
+            <script>
+                var game = JSON.parse(localStorage.getItem("turnierplan-game"))
+                var gameResults = JSON.parse(localStorage.getItem("turnierplan-gameResults"))
+                var settings = JSON.parse(localStorage.getItem("turnierplan-settings"))
+                settings.startTime = new Date(settings.startTime)
+                if (settings.KILLSWITCH) {KILLSWITCH=true}
+            </script>
+            <script>
+                const points = {
+                }
+                const winner = {
+                    groups:{
+                    },
+                    quarters:[],
+                    halfs:[],
+                    third: "",
+                    final:{first: "", second:""}
+                }
+                function pairs(arr){
+                    var result = [];
+                    for(var i = 0; i < arr.length; i++){
+                        for(var j = i+1; j < arr.length; j++){
+                            result.push([arr[i], arr[j]]);
+                        }
+                    }
+                    return result;
+                }
+                var gameCount = 1;
+                var gameFinalCount = 0;
+                for (let gr of Object.keys(game)){
+                    gameFinalCount += pairs(game[gr]).length;
+                }
+                function generateGame(tableBodyId, time, field, group, team1, team2, r1, r2){
+                    if (gameResults.groupPhase[gameCount] && tableBodyId == 'group-phase'){
+                        r1 = gameResults.groupPhase[gameCount][0];
+                        r2 = gameResults.groupPhase[gameCount][1];
+
+                        if (points[team1]){
+                            points[team1] += r1;
+                        } else {
+                            points[team1] = r1;
+                        }
+                        if (points[team2]){
+                            points[team2] += r2;
+                        } else {
+                            points[team2] = r2;
+                        }
+                    }
+                    if (gameResults.quarters[gameCount] && tableBodyId == 'quarterfinals'){
+                        r1 = gameResults.quarters[gameCount][0];
+                        r2 = gameResults.quarters[gameCount][1];
+
+                        if (r1 > r2){
+                            winner.quarters.push(team1);
+                        } else if (r1 < r2){
+                            winner.quarters.push(team2);
+                        }
+                    }
+                    if (gameResults.halfs[gameCount] && tableBodyId == 'halffinals'){
+                        r1 = gameResults.halfs[gameCount][0];
+                        r2 = gameResults.halfs[gameCount][1];
+
+                        if (r1 > r2){
+                            winner.halfs.push(team1);
+                        } else if (r1 < r2){
+                            winner.halfs.push(team2);
+                        }
+                    }
+                    if (gameResults.third[gameCount] && tableBodyId == 'thirdplace'){
+                        r1 = gameResults.third[gameCount][0];
+                        r2 = gameResults.third[gameCount][1];
+
+                        if (r1 > r2){
+                            winner.third = team1;
+                        } else if (r1 < r2){
+                            winner.third = team2;
+                        }
+                    }
+                    if (gameResults.finals[gameCount] && tableBodyId == 'finals'){
+                        r1 = gameResults.finals[gameCount][0];
+                        r2 = gameResults.finals[gameCount][1];
+
+                        if (r1 > r2){
+                            winner.final.first = team1;
+                            winner.final.second = team2;
+                        } else if (r1 < r2){
+                            winner.final.first = team2
+                            winner.final.second = team1;
+                        }
+                    }
+                    const innerHTMLArr = [time+"Uhr", gameCount, field, group, team1, "-",  team2, r1, ":", r2];
+                    const gameRow = document.createElement('tr');
+                    for (let elem of innerHTMLArr){
+                        if ((elem != group || !!elem) && elem !== "X"){
+                            var tempElem = document.createElement('td');
+                            if (elem == undefined){
+                                tempElem.innerHTML = "";
+                            } else {
+                                tempElem.innerHTML = elem;
+                            }
+                            gameRow.appendChild(tempElem);
+                        }
+                    }
+                    gameCount += 1;
+                    document.getElementById(tableBodyId).appendChild(gameRow);
+                }
+                function generatePause(tableBodyId, time){
+                    const gameRow = document.createElement('tr');
+                    var timeElem = document.createElement('td');
+                    timeElem.innerHTML = time+"Uhr";
+                    gameRow.appendChild(timeElem);
+                    gameRow.appendChild(document.createElement('td'));
+                    gameRow.appendChild(document.createElement('td'));
+                    var breakElem = document.createElement('td');
+                    breakElem.innerHTML = "Pause";
+                    gameRow.appendChild(breakElem);
+                    let i = 5;
+                    while (i > 0){
+                        gameRow.appendChild(document.createElement('td'));
+                        i--;
+                    }
+                    document.getElementById(tableBodyId).appendChild(gameRow);
+                }
+                function generateGroupTables(rowBodyId){
+                    for (let gr of Object.keys(game)){
+                        const groupcol = document.createElement('div');
+                        groupcol.className="col";
+                        const groupcolTable = document.createElement('table');
+                        groupcolTable.className="table";
+                        groupcol.appendChild(groupcolTable);
+                        const groupcolTableHead = document.createElement('thead');
+                        const groupcolTableHeadRow = document.createElement('tr');
+                        const groupcolTableHeadRowTitle = document.createElement('th');
+                        groupcolTableHeadRowTitle.innerHTML = "Gruppe "+gr.substring(5);
+                        groupcolTableHeadRow.appendChild(groupcolTableHeadRowTitle);
+                        groupcolTableHead.appendChild(groupcolTableHeadRow);
+                        groupcolTable.appendChild(groupcolTableHead);
+                        const groupcolTableBody = document.createElement('tbody');
+                        for (let t of game[gr]){
+                            const groupcolTableBodyRow = document.createElement('tr');
+                            const groupcolTableBodyRowTitle = document.createElement('td');
+                            groupcolTableBodyRowTitle.innerHTML = t;
+                            groupcolTableBodyRow.appendChild(groupcolTableBodyRowTitle);
+                            groupcolTableBody.appendChild(groupcolTableBodyRow);
+                        }
+                        groupcolTable.appendChild(groupcolTableBody);
+
+                        document.getElementById(rowBodyId).appendChild(groupcol);
+                    }
+                }
+                function generateGroupGames(){
+                    let minC = 0;
+                    let maxC = pairs(game['groupA']).length-1;
+                    let cc='min'
+                    // let tempStartTime = startTime;
+                    let tempField = 1;
+                    let breakDone = false;
+                    while (minC < (pairs(game['groupA']).length+1)/2 && maxC > (pairs(game['groupA']).length-1)/2){
+                        for (let gr of Object.keys(game)){
+                            let p = pairs(game[gr])[(cc==='min'?minC:maxC)];
+                            if (p){
+                                generateGame("group-phase", settings.startTime.toLocaleTimeString('de-DE').substring(0, 5), tempField, gr.substring(5), p[0], p[1]);
+                                if (tempField < settings.fieldCount){
+                                    tempField++;
+                                } else {
+                                    tempField = 1;
+                                    settings.startTime = new Date(settings.startTime.getTime() + settings.groupGameTime*60000)
+                                }
+                            }
+                            if ((Math.ceil(gameCount/settings.fieldCount) > Math.ceil(gameFinalCount/settings.fieldCount/2))&& !breakDone){
+                                breakDone = true;
+                                let tempGroupBreakCounter = settings.groupBreakCounter
+                                while (tempGroupBreakCounter > 0){
+                                    settings.startTime = new Date(settings.startTime.getTime() + settings.groupGameTime*60000)
+                                    generatePause("group-phase", settings.startTime.toLocaleTimeString('de-DE').substring(0, 5));
+                                    tempGroupBreakCounter--;
+                                }
+                            }
+                        }
+                        if (cc === 'min'){
+                            minC++;
+                            cc='max'
+                        } else {
+                            maxC--;
+                            cc='min'
+                        }
+                    }
+                }
+                function calcQuarters(){
+                    for (let gr of Object.keys(game)){
+                        let maxPoints = -1;
+                        let secondMaxPoints = -1;
+                        for (let team of game[gr]){
+                            if (points[team]>maxPoints){
+                                maxPoints= points[team];
+                                if (!winner.groups[gr]){winner.groups[gr]={first: "", second: ""}}
+                                winner.groups[gr].first=team
+                            }
+                        }
+                        for (let team of game[gr]){
+                            if(winner.groups[gr] && winner.groups[gr].first &&team != winner.groups[gr].first){
+                                if (points[team]>secondMaxPoints){
+                                    maxPoints= points[team];
+                                    winner.groups[gr].second=team
+                                }
+                            }
+                        }
+                    }
+                }
+                function genQuarters(){
+                    settings.startTime = new Date(settings.startTime.getTime() + settings.groupGameTime*settings.groupBreakCounter*60000)
+                    let tempField2 = 1;
+                    let switcher = +1;
+                    for (let grI in Object.keys(winner.groups)){
+                        grI = parseInt(grI);
+                        generateGame("quarterfinals", settings.startTime.toLocaleTimeString('de-DE').substring(0, 5), tempField2, false, winner.groups[Object.keys(winner.groups)[grI]].first, winner.groups[Object.keys(winner.groups)[grI+switcher]].second);
+                        
+                        if (tempField2 < settings.fieldCount){
+                            tempField2++;
+                        } else {
+                            tempField2 = 1;
+                            settings.startTime = new Date(settings.startTime.getTime() + settings.finalsGameTime*60000)
+                        }
+                        switcher = (switcher == +1 ? -1 : +1)
+                    }
+                }
+                function genHalfs(){
+                    if (winner.quarters.length > 0){
+                        generateGame("halffinals", settings.startTime.toLocaleTimeString('de-DE').substring(0, 5), "X", false, winner.quarters[0], winner.quarters[3]);
+                        settings.startTime = new Date(startTime.getTime() + settings.finalsGameTime*60000)
+                        generateGame("halffinals", startTime.toLocaleTimeString('de-DE').substring(0, 5), "X", false, winner.quarters[1], winner.quarters[2]);
+                        settings.startTime = new Date(settings.startTime.getTime() + settings.finalsGameTime*60000)
+                    }
+                }
+                function genThirds(){
+                    if (winner.halfs.length > 0){
+                        generateGame("thirdplace", settings.startTime.toLocaleTimeString('de-DE').substring(0, 5), "X", false, winner.quarters.filter(t => !winner.halfs.includes(t))[0], winner.quarters.filter(t => !winner.halfs.includes(t))[1]);
+                        settings.startTime = new Date(settings.startTime.getTime() + settings.finalsGameTime*60000)
+                    }
+                }
+                function genFinal(){
+                    if(winner.halfs.length > 0){
+                        generateGame("finals", settings.startTime.toLocaleTimeString('de-DE').substring(0, 5), "X", false, winner.halfs[0], winner.halfs[1]);
+                        settings.startTime = new Date(settings.startTime.getTime() + settings.finalsGameTime*60000)
+                    }
+                }
+                function calcWinner(){
+                    if (winner.final.first){
+                        const wcol = document.createElement('div');
+                        wcol.className="col";
+                        const wStrong = document.createElement('strong');
+                        wStrong.innerHTML = "Wir gratulieren ganz herzlich den Gewinnern des Teams: " + winner.final.first  +" !";
+                        wcol.appendChild(wStrong);
+                        const winnerGreet = document.getElementById("winnerGreet");
+                        winnerGreet.style.display = "block";
+                        winnerGreet.appendChild(wcol);
+                    }
+                }
+                function genHeader(tableId, title, groupPhase){
+                    const theader = document.createElement('thead');
+                    const theaderTitleRow = document.createElement('tr');
+                    const theaderRowTitle = document.createElement('th');
+                    theaderRowTitle.innerHTML = title;
+                    theaderRowTitle.colSpan = (groupPhase ? "9" : "8");
+                    theaderTitleRow.appendChild(theaderRowTitle);
+                    theader.appendChild(theaderTitleRow);
+                    const theaderRow = document.createElement('tr');
+                    const theaderRowTime = document.createElement('th');
+                    theaderRowTime.innerHTML = "Uhrzeit";
+                    theaderRow.appendChild(theaderRowTime);
+                    const theaderRowGame = document.createElement('th');
+                    theaderRowGame.innerHTML = "Spiel Nr.";
+                    theaderRow.appendChild(theaderRowGame);
+                    if (settings.fieldCount && !['halfTable', 'thirdTable', 'finalTable'].includes(tableId)){
+                        const theaderRowField = document.createElement('th');
+                        theaderRowField.innerHTML = "Spielfeld";
+                        theaderRow.appendChild(theaderRowField);
+                    }
+                    if (groupPhase){
+                        const theaderRowGroup = document.createElement('th');
+                        theaderRowGroup.innerHTML = "Gruppe";
+                        theaderRow.appendChild(theaderRowGroup);
+                    }
+                    const theaderRowPlaceholder = document.createElement('th');
+                    theaderRowPlaceholder.innerHTML = "";
+                    theaderRowPlaceholder.colSpan = "3";
+                    theaderRow.appendChild(theaderRowPlaceholder);
+                    const theaderRowResult = document.createElement('th');
+                    theaderRowResult.innerHTML = "Ergebnis";
+                    theaderRowResult.colSpan = "3";
+                    theaderRow.appendChild(theaderRowResult);
+                    theader.appendChild(theaderRow);
+                    document.getElementById(tableId).appendChild(theader);
+                }
+            </script>
+            <div class="container">
+                <div class="row">
+                    <div class="col">
+                        <h1 style="text-align: center;">Turnierplan</h1>
+                        <a class="btn btn-primary float-end" href="./config" target="_blank">Config</a>
+                    </div>
+                </div>
+            </div>
+            <br />
+            <div id="kickerPlan" class="container" style="text-align: center;">
+                <div class="row" id="group-tables">
+                </div>
+                <br/>
+                <div class="row">
+                    <div class="col" style="overflow-x: scroll;">
+                        <table class="table" id="groupTable">
+                            <script>genHeader("groupTable", "Gruppenphase", true)</script>
+                            <tbody id="group-phase">
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <br/>
+                <div class="row" >
+                    <div class="col" style="overflow-x: scroll;">
+                        <table class="table" id="quarterTable">
+                            <script>genHeader("quarterTable", "Viertelfinale", false)</script>
+                            <tbody id="quarterfinals">
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <br/>
+                <div class="row">
+                    <div class="col" style="overflow-x: scroll;">
+                        <table class="table" id="halfTable">
+                            <script>genHeader("halfTable", "Halbfinale", false)</script>
+                            <tbody id="halffinals">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <br/>
+                <div class="row">
+                    <div class="col" style="overflow-x: scroll;">
+                        <table class="table" id="thirdTable">
+                            <script>genHeader("thirdTable", "Spiel um den 3. Platz", false)</script>
+                            <tbody id="thirdplace">
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <br/>
+                <div class="row">
+                    <div class="col" style="overflow-x: scroll;">
+                        <table class="table" id="finalTable">
+                            <script>genHeader("finalTable", "Finale", false)</script>
+                            <tbody id="finals">
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <br/>
+                <div class="row" style="display: none;" id="winnerGreet">
+                </div>
+                <br />
+            </div>
+            <div id="kickerRegister">
+                <div id="kickerPlanError" style="display: none; text-align: center; color: red;"> Es ist ein Fehler mit dem Turnierplan aufgetreten, bitte achte auf die Ansagen des Turnierleiters. <br/> Du kannst den Turnierplan und die Ergebnisse weiterhin beim Turnierleiter erhalten. </div>
+            </div>
+            <script>
+                window.onload = function() {
+                    game = JSON.parse(localStorage.getItem("turnierplan-game"))
+                    gameResults = JSON.parse(localStorage.getItem("turnierplan-gameResults"))
+                    settings = JSON.parse(localStorage.getItem("turnierplan-settings"))
+
+                    if (!game) {game={}}
+                    if (!gameResults) {gameResults={groupPhase: {},quarters:{ },halfs:{},third:{},finals:{}}}
+                    if (!settings) {KILLSWITCH=true}
+                    if (settings.KILLSWITCH) {KILLSWITCH=true}
+                    settings.startTime = new Date(settings.startTime)
+
+                    generateGroupTables("group-tables")
+                    generateGroupGames()
+                    calcQuarters()
+                    genQuarters()
+                    genHalfs()
+                    genThirds()
+                    genFinal()
+                    calcWinner()
+                };
+            </script>
+            <script>
+                if (KILLSWITCH){
+                    killKickerPlan(true);
+                }
+            </script>
+        </div> 
+    </body>
+</html>
