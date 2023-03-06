@@ -14,6 +14,11 @@
     </head>
     <body>
         <div>
+            <style>
+                input[type=number]{
+                    width: 80px;
+                }
+            </style>
             <script>
                 window.onload = function() {
                     saveGroups();
@@ -58,8 +63,48 @@
                     }
                     document.getElementById("group-tables-save").disabled = false;
                 }
+                function addResult(){
+                    const resultTableBody = document.getElementById("results-table-results");
+                    const resultTableBodyRow = document.createElement('tr');
+                    const resultTableBodyRowPhase = document.createElement('td');
+                    const resultTableBodyRowPhaseSelect = document.createElement('select');
+                    var phases = {groupPhase: 'Gruppenphase', quarters: 'Viertelfinale', halfs: 'Halbfinale', third: 'Spiel um den 3.', finals:'Finale'}
+                    for (phase of Object.keys(phases)){
+                        var opt = document.createElement('option');
+                        opt.value = phase;
+                        opt.innerHTML = phases[phase];
+                        resultTableBodyRowPhaseSelect.appendChild(opt);
+                    }
+                    resultTableBodyRowPhase.appendChild(resultTableBodyRowPhaseSelect);
+                    resultTableBodyRow.appendChild(resultTableBodyRowPhase);
+
+                    const resultTableBodyRowGame = document.createElement('td');
+                    const resultTableBodyRowGameInput = document.createElement('input');
+                    resultTableBodyRowGameInput.type = 'number';
+                    resultTableBodyRowGame.appendChild(resultTableBodyRowGameInput);
+                    resultTableBodyRow.appendChild(resultTableBodyRowGame);
+
+                    const resultTableBodyRowResultA = document.createElement('td');
+                    const resultTableBodyRowResultAInput = document.createElement('input');
+                    resultTableBodyRowResultAInput.type = 'number';
+                    resultTableBodyRowResultA.appendChild(resultTableBodyRowResultAInput);
+                    resultTableBodyRow.appendChild(resultTableBodyRowResultA);
+
+                    const resultTableBodyRowResultDelimiter = document.createElement('td');
+                    const resultTableBodyRowResultDelimiterInner = document.createElement('div');
+                    resultTableBodyRowResultDelimiterInner.innerText = ' : ';
+                    resultTableBodyRowResultDelimiter.appendChild(resultTableBodyRowResultDelimiterInner);
+                    resultTableBodyRow.appendChild(resultTableBodyRowResultDelimiter);
+
+                    const resultTableBodyRowResultB = document.createElement('td');
+                    const resultTableBodyRowResultBInput = document.createElement('input');
+                    resultTableBodyRowResultBInput.type = 'number';
+                    resultTableBodyRowResultB.appendChild(resultTableBodyRowResultBInput);
+                    resultTableBodyRow.appendChild(resultTableBodyRowResultB);
+
+                    resultTableBody.appendChild(resultTableBodyRow);
+                }
                 function saveGroups(){
-                    console.log("fireGroup", teamCount, teamPlayerCount)
                     const game = {}
                     for (let i = 0; i<teamCount; i++){
                         const group = document.getElementsByClassName("group"+alpha[i])
@@ -68,7 +113,6 @@
                             game["group"+alpha[i]].push(group[j].value)
                         }
                     }
-                    console.log(game)
                     localStorage.setItem("turnierplan-game", JSON.stringify(game))
                 }
                 function saveSettings(){
@@ -91,6 +135,16 @@
                     const gameResults = {
                         groupPhase: {},quarters:{ },halfs:{},third:{},finals:{}    
                     }
+
+                    const results = document.getElementById("results-table-results").children
+                    for (r of results){
+                        const phase = r.children[0].children[0].value
+                        const game = r.children[1].children[0].value
+                        const resultA = r.children[2].children[0].value
+                        const resultB = r.children[4].children[0].value
+                        gameResults[phase][game] = [resultA, resultB]
+                    }
+                    console.log(gameResults)
                     localStorage.setItem("turnierplan-gameResults", JSON.stringify(gameResults))
                 }
             </script>
@@ -115,15 +169,15 @@
                                 <div class="accordion-body">
                                     <div class="container">
                                         <div class="row">
-                                            <div class="col-12"><label>Anzahl Spielfelder: <input type="number" style="width: 80px;" id="fieldCount" value="5"/></label></div>
+                                            <div class="col-12"><label>Anzahl Spielfelder: <input type="number" id="fieldCount" value="5"/></label></div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-6"><label>Pausenlänge: <input type="number" style="width: 80px;" id="groupBreakCounter" value="2"/>x Spielzeit</label></div>
+                                            <div class="col-6"><label>Pausenlänge: <input type="number" id="groupBreakCounter" value="2"/>x Spielzeit</label></div>
                                             <div class="col-6"><label>Startzeit: <input type="time" id="startTime" value="18:00:00" /></label></div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-6"><label>Spielzeit je Spiel (Gruppenphase): <input type="number" style="width: 80px;" id="groupGameTime" value="10"/>Min.</label></div>
-                                            <div class="col-6"><label>Spielzeit je Spiel (Finale): <input type="number" style="width: 80px;" id="finalsGameTime" value="15"/>Min.</label></div>
+                                            <div class="col-6"><label>Spielzeit je Spiel (Gruppenphase): <input type="number"id="groupGameTime" value="10"/>Min.</label></div>
+                                            <div class="col-6"><label>Spielzeit je Spiel (Finale): <input type="number"id="finalsGameTime" value="15"/>Min.</label></div>
                                         </div>
                                         <div class="row">
                                             <div class="col"><label class="float-end" style="color: red;"><input type="checkbox" id="KILLSWITCH" /> KILLSWITCH</label></div>
@@ -148,8 +202,8 @@
                                     <div class="container">
                                         <div class="row">
                                             <div class="col">
-                                                <label>Anzahl Teams: <input type="number" style="width: 80px;" id="countTeams" value="2"/></label>
-                                                <label>Anzahl Spieler je Team: <input type="number" style="width: 80px;" id="countTeamsPlayer" value="3"/></label>
+                                                <label>Anzahl Teams: <input type="number" id="countTeams" value="2"/></label>
+                                                <label>Anzahl Spieler je Team: <input type="number" id="countTeamsPlayer" value="3"/></label>
                                                 <button class="btn btn-primary" onclick="generateGroups()">Set</button>
                                             </div>
                                         </div>
@@ -173,7 +227,20 @@
                               <div id="flush-collapseThree" class="accordion-collapse collapse show" aria-labelledby="flush-headingThree" data-bs-parent="#accordionFlushExample">
                                 <div class="accordion-body">
                                     <div class="container">
-                                        <div class="row" id="results-tables" style="text-align: center;">
+                                        <div class="row" id="results-table" style="text-align: center;">
+                                            <table class="table">
+                                                <thead>
+                                                    <tr><th>Spielphase</th><th>Spiel Nr.</th><th colspan="3">Ergebniss</th></tr>
+                                                </thead>
+                                                <tbody id="results-table-results">
+                                                    
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col">
+                                                <button class="btn btn-primary float-end" id="results-add" onclick="addResult()">Hinzufügen</button>
+                                            </div>
                                         </div>
                                         <div class="row">
                                             <div class="col">
