@@ -65,15 +65,13 @@
                         r1 = gameResults.groupPhase[gameCount][0];
                         r2 = gameResults.groupPhase[gameCount][1];
 
-                        if (points[team1]){
-                            points[team1] += r1;
+                        if (r1 > r2){
+                            points[team1] = (points[team1] ? points[team1] : 0) + 3;
+                        } else if (r1 === r2){
+                            points[team1] = (points[team1] ? points[team1] : 0) + 1;
+                            points[team2] = (points[team2] ? points[team2] : 0) + 1;
                         } else {
-                            points[team1] = r1;
-                        }
-                        if (points[team2]){
-                            points[team2] += r2;
-                        } else {
-                            points[team2] = r2;
+                            points[team2] = (points[team2] ? points[team2] : 0) + 3;
                         }
                     }
                     if (gameResults.quarters[gameCount] && tableBodyId == 'quarterfinals'){
@@ -120,6 +118,7 @@
                     }
                     const innerHTMLArr = [time+"Uhr", gameCount, field, group, team1, "-",  team2, r1, ":", r2];
                     const gameRow = document.createElement('tr');
+                    gameRow.id = "gameid-"+gameCount
                     for (let elem of innerHTMLArr){
                         if ((elem != group || !!elem) && elem !== "X"){
                             var tempElem = document.createElement('td');
@@ -221,41 +220,122 @@
                         let maxPoints = -1;
                         let secondMaxPoints = -1;
                         for (let team of game[gr]){
+                            // 3 punkte für Sieg
+                            // 1 punkt für Unentschieden für beide
+                            // 0 punkte für Niederlage
+                            // Bei GLeicher Punktzahl: Torverhältnis: Geschossene - Kassierte
+                            // Wenn Torverhältnis Gleich: Meist Geschossene
                             if (points[team]>maxPoints){
                                 maxPoints= points[team];
                                 if (!winner.groups[gr]){winner.groups[gr]={first: "", second: ""}}
                                 winner.groups[gr].first=team
+                            } else if (points[team] === maxPoints){
+                                const goal1 = 0;
+                                const goal2 = 0;
+                                const got1 = 0;
+                                const got2 = 0;
+                                for (let gI of Object.keys(gameResults.groupPhase)){
+                                    const gameDetails = document.getElementById("gameid-"+gI);
+                                    if (gameDetails.children[4].innerHTML === team){
+                                        goal1 += gameResults.groupPhase[gI][0];
+                                        goal2 += gameResults.groupPhase[gI][1];
+                                        got1 += gameResults.groupPhase[gI][1];
+                                        got2 += gameResults.groupPhase[gI][0];
+                                    } else if (gameDetails.children[6].innerHTML === team){
+                                        goal2 += gameResults.groupPhase[gI][0];
+                                        goal1 += gameResults.groupPhase[gI][1];
+                                        got2 += gameResults.groupPhase[gI][1];
+                                        got1 += gameResults.groupPhase[gI][0];
+                                    }
+                                }
+                                if ((goal1-got1) > (goal2-got2)){
+                                    winner.groups[gr].first = team
+                                } else if ((goal2-got2) > (goal1-got1)){
+                                    // do nothing
+                                } else {
+                                    if (goal1 > goal2){
+                                        winner.groups[gr].first = team
+                                    } else if (goal2 > goal1){
+                                        // do nothing
+                                    }
+                                }
                             }
                         }
                         for (let team of game[gr]){
                             if(winner.groups[gr] && winner.groups[gr].first &&team != winner.groups[gr].first){
                                 if (points[team]>secondMaxPoints){
-                                    maxPoints= points[team];
+                                    secondMaxPoints= points[team];
                                     winner.groups[gr].second=team
+                                } else if (points[team] === secondMaxPoints){
+                                    const goal1 = 0;
+                                    const goal2 = 0;
+                                    const got1 = 0;
+                                    const got2 = 0;
+                                    for (let gI of Object.keys(gameResults.groupPhase)){
+                                        const gameDetails = document.getElementById("gameid-"+gI);
+                                        if (gameDetails.children[4].innerHTML === team){
+                                            goal1 += gameResults.groupPhase[gI][0];
+                                            goal2 += gameResults.groupPhase[gI][1];
+                                            got1 += gameResults.groupPhase[gI][1];
+                                            got2 += gameResults.groupPhase[gI][0];
+                                        } else if (gameDetails.children[6].innerHTML === team){
+                                            goal2 += gameResults.groupPhase[gI][0];
+                                            goal1 += gameResults.groupPhase[gI][1];
+                                            got2 += gameResults.groupPhase[gI][1];
+                                            got1 += gameResults.groupPhase[gI][0];
+                                        }
+                                    }
+                                    if ((goal1-got1) > (goal2-got2)){
+                                        winner.groups[gr].second = team
+                                    } else if ((goal2-got2) > (goal1-got1)){
+                                        // do nothing
+                                    } else {
+                                        if (goal1 > goal2){
+                                            winner.groups[gr].second = team
+                                        } else if (goal2 > goal1){
+                                            // do nothing
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
+                function sortDictByValue(dict){
+                    var elements = Object.keys(dict).map( (key) => {
+                        return [key, dict[key]]
+                    });
+                    elements.sort(
+                        (first, second) => { return second[1] - first[1] }
+                    );
+                    return elements.map( (e) => { return e[0] });
+                }
                 function genQuarters(){
-                    settings.startTime = new Date(settings.startTime.getTime() + settings.groupGameTime*settings.groupBreakCounter*60000)
-                    let tempField2 = 1;
-                    let switcher = +1;
-                    for (let grI in Object.keys(winner.groups)){
-                        grI = parseInt(grI);
-                        generateGame("quarterfinals", settings.startTime.toLocaleTimeString('de-DE').substring(0, 5), tempField2, false, winner.groups[Object.keys(winner.groups)[grI]].first, winner.groups[Object.keys(winner.groups)[grI+switcher]].second);
-                        
-                        if (tempField2 < settings.fieldCount){
-                            tempField2++;
-                        } else {
-                            tempField2 = 1;
-                            settings.startTime = new Date(settings.startTime.getTime() + settings.finalsGameTime*60000)
+                    if (Object.keys(game).length > 1 && Object.keys(winner.groups).length > 1){
+                        settings.startTime = new Date(settings.startTime.getTime() + settings.groupGameTime*settings.groupBreakCounter*60000)
+                        let tempField2 = 1;
+                        let switcher = +1;
+                        for (let grI in Object.keys(winner.groups)){
+                            grI = parseInt(grI);
+                            generateGame("quarterfinals", settings.startTime.toLocaleTimeString('de-DE').substring(0, 5), tempField2, false, winner.groups[Object.keys(winner.groups)[grI]].first, winner.groups[Object.keys(winner.groups)[grI+switcher]].second);
+                            
+                            if (tempField2 < settings.fieldCount){
+                                tempField2++;
+                            } else {
+                                tempField2 = 1;
+                                settings.startTime = new Date(settings.startTime.getTime() + settings.finalsGameTime*60000)
+                            }
+                            switcher = (switcher == +1 ? -1 : +1)
                         }
-                        switcher = (switcher == +1 ? -1 : +1)
+                    }
+                    if (Object.keys(game).length === 1){
+                        winner.quarters = [...sortDictByValue(points)]
+                        winner.halfs = [winner.quarters[0], winner.quarters[1]]
+
                     }
                 }
                 function genHalfs(){
-                    if (winner.quarters.length > 0){
+                    if (winner.quarters.length > 0 && Object.keys(game).length > 1){
                         generateGame("halffinals", settings.startTime.toLocaleTimeString('de-DE').substring(0, 5), "X", false, winner.quarters[0], winner.quarters[3]);
                         settings.startTime = new Date(startTime.getTime() + settings.finalsGameTime*60000)
                         generateGame("halffinals", startTime.toLocaleTimeString('de-DE').substring(0, 5), "X", false, winner.quarters[1], winner.quarters[2]);
@@ -322,6 +402,9 @@
                     theader.appendChild(theaderRow);
                     document.getElementById(tableId).appendChild(theader);
                 }
+            </script>
+            <script>
+                console.log("### Spiel, Ergebnisse, Punkte, Sieger: ", game, gameResults, points, winner)
             </script>
             <div class="container">
                 <div class="row">

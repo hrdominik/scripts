@@ -18,6 +18,9 @@
                 input[type=number]{
                     width: 80px;
                 }
+                .error{
+                    color: red;
+                }
             </style>
             <script>
                 window.onload = function() {
@@ -135,6 +138,8 @@
                     const gameResults = {
                         groupPhase: {},quarters:{ },halfs:{},third:{},finals:{}    
                     }
+                    const error = document.getElementById('error-msg');
+                    error.innerText = ""
 
                     const results = document.getElementById("results-table-results").children
                     for (r of results){
@@ -142,9 +147,14 @@
                         const game = r.children[1].children[0].value
                         const resultA = r.children[2].children[0].value
                         const resultB = r.children[4].children[0].value
+                        if (['quarters', 'halfs', 'third', 'finals'].includes(phase)){
+                            const error = document.getElementById('error-msg');
+                            error.innerText = "Spiele dürfen nicht Unentschieden sein!"
+                            break;
+                        }
                         gameResults[phase][game] = [resultA, resultB]
                     }
-                    console.log(gameResults)
+                    console.log("### Ergebnisse: ", gameResults)
                     localStorage.setItem("turnierplan-gameResults", JSON.stringify(gameResults))
                 }
             </script>
@@ -202,8 +212,8 @@
                                     <div class="container">
                                         <div class="row">
                                             <div class="col">
-                                                <label>Anzahl Teams: <input type="number" id="countTeams" value="2"/></label>
-                                                <label>Anzahl Spieler je Team: <input type="number" id="countTeamsPlayer" value="3"/></label>
+                                                <label>Anzahl Gruppen: <input type="number" id="countTeams" value="2"/></label>
+                                                <label>Anzahl Teams je Gruppe: <input type="number" id="countTeamsPlayer" value="3"/></label>
                                                 <button class="btn btn-primary" onclick="generateGroups()">Set</button>
                                             </div>
                                         </div>
@@ -245,6 +255,11 @@
                                         <div class="row">
                                             <div class="col">
                                                 <button class="btn btn-primary float-end" id="results-save" onclick="saveResults()">Speichern</button>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col">
+                                                <div class="error" id="error-msg"></div>
                                             </div>
                                         </div>
                                     </div>
