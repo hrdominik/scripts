@@ -267,10 +267,10 @@
                                     secondMaxPoints= points[team];
                                     winner.groups[gr].second=team
                                 } else if (points[team] === secondMaxPoints){
-                                    const goal1 = 0;
-                                    const goal2 = 0;
-                                    const got1 = 0;
-                                    const got2 = 0;
+                                    let goal1 = 0;
+                                    let goal2 = 0;
+                                    let got1 = 0;
+                                    let got2 = 0;
                                     for (let gI of Object.keys(gameResults.groupPhase)){
                                         const gameDetails = document.getElementById("gameid-"+gI);
                                         if (gameDetails.children[4].innerHTML === team){
@@ -404,6 +404,7 @@
                 }
             </script>
             <script>
+                console.log("### Turnierplan v1.0 by hrdominik ###")
                 console.log("### Spiel, Ergebnisse, Punkte, Sieger: ", game, gameResults, points, winner)
             </script>
             <div class="container">
