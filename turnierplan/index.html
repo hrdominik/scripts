@@ -230,22 +230,29 @@
                                 if (!winner.groups[gr]){winner.groups[gr]={first: "", second: ""}}
                                 winner.groups[gr].first=team
                             } else if (points[team] === maxPoints){
-                                const goal1 = 0;
-                                const goal2 = 0;
-                                const got1 = 0;
-                                const got2 = 0;
+                                let goal1 = 0;
+                                let goal2 = 0;
+                                let got1 = 0;
+                                let got2 = 0;
+                                let matchId = -1;
                                 for (let gI of Object.keys(gameResults.groupPhase)){
                                     const gameDetails = document.getElementById("gameid-"+gI);
                                     if (gameDetails.children[4].innerHTML === team){
                                         goal1 += gameResults.groupPhase[gI][0];
-                                        goal2 += gameResults.groupPhase[gI][1];
                                         got1 += gameResults.groupPhase[gI][1];
-                                        got2 += gameResults.groupPhase[gI][0];
                                     } else if (gameDetails.children[6].innerHTML === team){
-                                        goal2 += gameResults.groupPhase[gI][0];
                                         goal1 += gameResults.groupPhase[gI][1];
-                                        got2 += gameResults.groupPhase[gI][1];
                                         got1 += gameResults.groupPhase[gI][0];
+                                    }
+                                    if (gameDetails.children[4].innerHTML === winner.groups[gr].first){
+                                        goal2 += gameResults.groupPhase[gI][0];
+                                        got2 += gameResults.groupPhase[gI][1];
+                                    } else if (gameDetails.children[6].innerHTML === winner.groups[gr].first){
+                                        goal2 += gameResults.groupPhase[gI][1];
+                                        got2 += gameResults.groupPhase[gI][0];
+                                    }
+                                    if ((gameDetails.children[4].innerHTML === team && gameDetails.children[6].innerHTML === winner.groups[gr].first) || (gameDetails.children[4].innerHTML === winner.groups[gr].first && gameDetails.children[6].innerHTML === team)){
+                                        matchId = gI;
                                     }
                                 }
                                 if ((goal1-got1) > (goal2-got2)){
@@ -257,6 +264,8 @@
                                         winner.groups[gr].first = team
                                     } else if (goal2 > goal1){
                                         // do nothing
+                                    } else {
+                                        alert("Die Teams " + team + " und " + winner.groups[gr].first + " benötigen ein Entscheidungsspiel!\n\nAddiere das Ergebnis des Entscheidungspiel zu Spiel " + matchId + " hinzu.")
                                     }
                                 }
                             }
@@ -271,19 +280,26 @@
                                     let goal2 = 0;
                                     let got1 = 0;
                                     let got2 = 0;
+                                    let matchId = -1;
                                     for (let gI of Object.keys(gameResults.groupPhase)){
                                         const gameDetails = document.getElementById("gameid-"+gI);
                                         if (gameDetails.children[4].innerHTML === team){
-                                            goal1 += gameResults.groupPhase[gI][0];
-                                            goal2 += gameResults.groupPhase[gI][1];
-                                            got1 += gameResults.groupPhase[gI][1];
-                                            got2 += gameResults.groupPhase[gI][0];
-                                        } else if (gameDetails.children[6].innerHTML === team){
-                                            goal2 += gameResults.groupPhase[gI][0];
-                                            goal1 += gameResults.groupPhase[gI][1];
-                                            got2 += gameResults.groupPhase[gI][1];
-                                            got1 += gameResults.groupPhase[gI][0];
-                                        }
+                                        goal1 += gameResults.groupPhase[gI][0];
+                                        got1 += gameResults.groupPhase[gI][1];
+                                    } else if (gameDetails.children[6].innerHTML === team){
+                                        goal1 += gameResults.groupPhase[gI][1];
+                                        got1 += gameResults.groupPhase[gI][0];
+                                    }
+                                    if (gameDetails.children[4].innerHTML === winner.groups[gr].second){
+                                        goal2 += gameResults.groupPhase[gI][0];
+                                        got2 += gameResults.groupPhase[gI][1];
+                                    } else if (gameDetails.children[6].innerHTML === winner.groups[gr].second){
+                                        goal2 += gameResults.groupPhase[gI][1];
+                                        got2 += gameResults.groupPhase[gI][0];
+                                    }
+                                    if ((gameDetails.children[4].innerHTML === team && gameDetails.children[6].innerHTML === winner.groups[gr].second) || (gameDetails.children[4].innerHTML === winner.groups[gr].second && gameDetails.children[6].innerHTML === team)){
+                                        matchId = gI;
+                                    }
                                     }
                                     if ((goal1-got1) > (goal2-got2)){
                                         winner.groups[gr].second = team
@@ -294,6 +310,8 @@
                                             winner.groups[gr].second = team
                                         } else if (goal2 > goal1){
                                             // do nothing
+                                        } else {
+                                            alert("Die Teams " + team + " und " + winner.groups[gr].first + " benötigen ein Entscheidungsspiel!\n\nAddiere das Ergebnis des Entscheidungspiel zu Spiel " + matchId + " hinzu.")
                                         }
                                     }
                                 }
