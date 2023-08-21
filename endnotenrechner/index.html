@@ -1,96 +1,118 @@
-
 <!doctype html>
 <html lang="de">
-    <head>
-        <!-- Required meta tags -->
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <!-- Bootstrap CSS -->
-        <link rel="stylesheet" type="text/css" href="./assets/bootstrap-grid.min.css">
-        <link rel="stylesheet" type="text/css" href="./assets/bootstrap.min.css">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>Endnotenrechner</title>
-    </head>
-    <body>
-        <script type="text/javascript" src="./gradecalc.js"></script>
-        <style>
-            .module-table-inner .row{
-                margin-bottom: 5px;
-            }
-            .module-item-del {
-                max-width: 90px !important;
-            }
-            .module-item{
-                min-width: 75px;
-            }
-            .module-item-name {
-                min-width: 300px;
-            }
-        </style>
-        <div class="bd-intro">
-            <div class="container">
-                <div class="row">
-                    <div class="col">
-                        <h1 class="bd-title">Endnotenrechner</h1>
-                        <p class="bd-lead">
-                        Du möchtest deine vorraussichtliche Endnote deines Bachelorstudium ausrechnen? Oder du musst wissen welche
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" type="text/css" href="./assets/bootstrap-grid.min.css">
+    <link rel="stylesheet" type="text/css" href="./assets/bootstrap.min.css">
+
+    <title>Endnotenrechner</title>
+</head>
+
+<body>
+    <script type="text/javascript" src="./gradecalc.js"></script>
+    <style>
+        .module-table-inner .row {
+            margin-bottom: 5px;
+        }
+
+        .module-table {
+            margin-bottom: 30px;
+        }
+
+        .module-item-del {
+            max-width: 90px !important;
+        }
+
+        .module-item {
+            min-width: 75px;
+        }
+
+        .module-item-header {
+            border-top: 0;
+            border-right: 0;
+            border-left: 0;
+        }
+
+        .module-item-name {
+            min-width: 300px;
+        }
+
+        .text-center {
+            display: flex;
+            justify-content: center;
+            align-items: center
+        }
+
+        .text-small {
+            font-size: small;
+        }
+    </style>
+    <div class="bd-intro">
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <!-- <img src="" class="rounded mx-auto d-block" style="width: 40%;" alt="Headerimage "/> -->
+                    <h1 class="bd-title">Endnotenrechner</h1>
+                    <p class="bd-lead">
+                        Du möchtest deine vorraussichtliche Endnote deines Bachelorstudium ausrechnen? Oder du musst
+                        wissen welche
                         Note du in einem Modul brauchst um eine bestimmte Endnote zu bekommen? <br />
                         Dann bist du hier genau richtig!
-                        </p>
-                    </div>
+                    </p>
                 </div>
             </div>
         </div>
-        <div class="bd-content">
-            <div class="container">
-                <div class="row">
+    </div>
+    <div class="bd-content">
+        <div class="container">
+            <div class="row">
                 <div class="col">
                     <button onclick="useWinfo()" class="btn btn-primary btn-sm">Winfo-Bachelor Verlaufsplan</button>
-                    <br /><label><input type="checkbox" id="graduationSwitch" onclick="clearModules()" /> Ich bin Master</label>
+                    <br /><label><input type="checkbox" id="graduationSwitch" onclick="clearModules()" /> Ich bin
+                        Master</label>
                     <div class="module-table container">
                         <div class="row">
-                            <input
-                            type="text"
-                            class="col module-item module-item-name"
-                            name="moduleName-header"
-                            value="Modulname"
-                            disabled
-                            /><input type="text" class="col module-item" name="semester-header" value="Semester" disabled /><input
-                            type="text"
-                            class="col module-item"
-                            name="ects-header"
-                            value="ECTS"
-                            disabled
-                            /><input type="text" class="col module-item" name="grade-header" value="Note" disabled /><button
-                            class="btn btn-primary col module-item module-item-del"
-                            onclick="clearModules()"
-                            >
-                            Entfernen
+                            <input type="text" class="col module-item module-item-name module-item-header"
+                                name="moduleName-header" value="Modulname" disabled /><input type="text"
+                                class="col module-item module-item-header" name="semester-header" value="Semester"
+                                disabled /><input type="text" class="col module-item module-item-header"
+                                name="ects-header" value="Leistungspunkte" disabled /><input type="text"
+                                class="col module-item module-item-header" name="grade-header" value="Note"
+                                disabled /><button
+                                class="btn btn-secondary col module-item module-item-del text-center text-small"
+                                onclick="clearModules()">
+                                Zurücksetzen
                             </button>
                         </div>
                         <div class="module-table-inner" id="module-table-inner"></div>
                     </div>
                     <span id="error" class="error"></span>
                     <div class="button-group">
-                        <button onclick="addModule()" class="btn btn-primary">Modul Hinzufügen</button>
-                        <button onclick="calcGrade()" class="btn btn-primary">Note Berechnen</button>
+                        <button onclick="addModule()" class="btn btn-primary">Modul hinzufügen</button>
+                        <button onclick="calcGrade()" class="btn btn-primary">Note berechnen</button>
                     </div>
                     <div class="button-group">
-                        <button onclick="importPlan()" class="btn btn-primary btn-sm">Importieren</button>
-                        <button onclick="getFromLocalStorage()" class="btn btn-primary btn-sm">Aus Browser laden</button>
+                        <button onclick="importieren()" class="btn btn-secondary btn-sm">Importieren</button>
+                        <button onclick="getFromLocalStorage()" class="btn btn-secondary btn-sm">Aus Browser
+                            laden</button>
                         <div id="import-input"></div>
                     </div>
                     <div class="result-container-wrapper" id="result-container-wrapper" style="display: none">
                         <div class="result-container" id="result-container">
-                            <strong>ECTS Gesamt:</strong>
+                            <strong>Leistungspunkte Gesamt:</strong>
                             <p id="result-ects"></p>
                             <strong>Deine Endnote:</strong>
                             <p id="result"></p>
                             <br />
                             <div class="button-group">
-                                <button onclick="exportPlan()" class="btn btn-primary btn-sm">Exportieren</button>
-                                <button onclick="save2LocalStorage()" class="btn btn-primary btn-sm">Im Browser speichern</button>
+                                <button onclick="exportieren()" class="btn btn-secondary btn-sm">Exportieren</button>
+                                <button onclick="save2LocalStorage()" class="btn btn-secondary btn-sm">Im Browser
+                                    speichern</button>
                             </div>
                         </div>
                     </div>
@@ -99,4 +121,5 @@
         </div>
     </div>
 </body>
+
 </html>

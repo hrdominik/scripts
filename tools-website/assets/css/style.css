@@ -1,0 +1,175 @@
+:root {
+    --bgColor:#333333;
+    --bgAccColor: #545454;
+    --accentColor: #FFB900;
+    --font: 'Lato', sans-serif;
+}
+
+body {
+    font-family: var(--font);
+    background-color: var(--bgColor);
+    color: #fff;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+.page-wraper{
+    margin-top: 50px;
+}
+
+/* Basics */
+h2{
+    font-weight: 700;
+}
+h3 {
+    font-size: calc(1.2rem + .6vw);
+}
+
+color{
+    color: var(--accentColor);
+}
+
+input,
+select,
+textarea {
+    outline: none;
+}
+
+a {
+    color: var(--accentColor);
+    text-decoration: none !important;
+}
+a:hover {
+    color: var(--accentColor);
+    text-decoration: underline;
+}
+
+.link-button{
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 45px;
+    min-width: 125px;
+    background-color: var(--bgAccColor);
+}
+.link-button:hover{
+    cursor: pointer;
+    background-color: var(--accentColor);
+}
+.link-button:hover a, .link-button:hover .fab, .link-button:hover .fa, .link-button:hover .fas, .link-button:hover .fa-solid, .link-button:hover .fa-brands{
+    color: var(--bgColor);
+}
+.link-button a{
+    padding: 12px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.75px;
+    text-transform: uppercase;
+    color: var(--accentColor);
+}
+
+p {
+    font-size: 16px;
+    line-height: 24px;
+    color: #fff;
+}
+
+span {
+    font-size: 16px;
+    font-style: italic;
+}
+
+/* img {
+    width: 100%;
+} */
+
+small {
+    font-size: 60%;
+}
+
+.h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {
+    line-height: 0.9;
+}
+
+.spacer{
+    min-height: 7px;
+}
+
+button{
+    border: inherit;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    height: 45px;
+    min-width: 125px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.75px;
+    background-color: var(--bgAccColor);
+    color: var(--accentColor);
+
+}
+button:hover{
+    color: var(--bgColor);
+    background-color: var(--accentColor);
+}
+
+.fa, .fas, .fab, .fa-solid, .fa-brands{
+    color: var(--accentColor);
+}
+
+.footer{
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    max-width: 100%;
+    flex-wrap: wrap;
+}
+
+.link{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--accentColor);
+    color: var(--bgColor);
+    font-family: var(--font);
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 17px;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: all .25s cubic-bezier(.08,.59,.29,.99);
+    border: solid var(--accentColor) 2px;
+    height: 50px;
+}
+#links{
+    max-width: 675px;
+    width: auto;
+    display: block;
+    margin: 27px auto;
+}
+.link .fab, .link .fa{
+    color: var(--bgColor);
+    margin-right: 0;
+    margin-left: 0;
+}
+
+.link:hover{
+    background-color: var(--bgColor);
+    color: var(--accentColor);
+}
+
+.link label{
+    cursor: pointer;
+}
+
+label{
+    margin-left: -32px;
+    margin-bottom: 0;
+}
+
+.link:hover .fab,.link:hover .fa{
+    color: var(--accentColor);
+}
