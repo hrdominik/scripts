@@ -24,9 +24,8 @@ def speedTest():
 
 
 def main():
-    logFilename = 'speedtest.log'
-    format = '%(asctime)s:%(levelname)s; %(message)s'
-    log.basicConfig(filename=logFilename, level=log.INFO, format=format)
+    logFilename = '/var/logs/speedtest/speedtest.log'
+    log.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', filename=logFilename, level=log.INFO, datefmt='%Y-%m-%d %H:%M:%S')
 
     try:
         speedTestJson = json.loads(speedTest())

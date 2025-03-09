@@ -1,0 +1,16 @@
+# systemctl daemon-reload
+
+# /etc/systemd/system/speedtest.service
+[Unit]
+Description=Speedtest tracking
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /var/scripts/statusCheck/speedtest.py
+User=root
+WorkingDirectory=/var/scripts/statusCheck
+
+[Install]
+WantedBy=multi-user.target
