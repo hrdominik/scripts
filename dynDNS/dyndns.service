@@ -1,0 +1,16 @@
+# systemctl daemon-reload
+
+# /etc/systemd/system/dyndns.service
+[Unit]
+Description=Dynamic DNS Update Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /var/scripts/dynDNS/dynDNS.py
+User=root
+WorkingDirectory=/var/scripts/dynDNS
+
+[Install]
+WantedBy=multi-user.target

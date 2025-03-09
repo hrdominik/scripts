@@ -7,11 +7,13 @@ run this as CronJob like the following:
 ###
 @daily /usr/bin/python3 /path/to/file/dynDNS.py
 ### or
-0 0 * * * 
+0 */3 * * * /usr/bin/python3 /path/to/file/dynDNS.py
 ###
 
+alternative run as a service like in the files in this repo
+
 @author: DHR
-@last-modified: 23.01.2022
+@last-modified: 09.03.2025
 """
 from email import message
 import os
@@ -19,6 +21,7 @@ from dotenv import load_dotenv
 import logging as log
 import requests
 import smtplib, ssl
+from pathlib import Path
 
 def getCurrentExternalIP():
     Response = requests.get('https://ipinfo.io/ip')
@@ -30,14 +33,15 @@ def getCurrentExternalIP():
 def callPhpApi(api, action, jsonData):
     data = {'action': action, 'param': jsonData}
     Response = requests.post(api, json=data)
+    #print('response: ', Response, Response.status_code, Response.text, Response.headers.get('content-type'))
     if Response.status_code != requests.codes.ok:
         raise Exception
-    return Response.json()['responsedata']
+    return Response.json()
 
 def login2API(apiSettings):
     jsonData = {'customernumber':apiSettings['user'], 'apikey':apiSettings['apikey'], 'apipassword':apiSettings['apipassword']}
     ResponseData = callPhpApi(apiSettings['api'], 'login', jsonData)
-    return ResponseData['apisessionid']
+    return ResponseData['responsedata']['apisessionid']
 
 def logoutFromAPI(apiSettings):
     jsonData = {'customernumber':apiSettings['user'], 'apikey':apiSettings['apikey'], 'apisessionid':apiSettings['apisessionid']}
@@ -45,10 +49,10 @@ def logoutFromAPI(apiSettings):
 
 
 def updateDNSRecord(apiSettings, currIP, domain, record, hostname):
-    dnsRecordSet = {'dnsrecords': [{"id":record, "hostname": hostname, "type": "CNAME", "priority": "0", "destination": currIP, "deleterecord": "false", "state": "yes"}]}
+    dnsRecordSet = {'dnsrecords': [{"id":record, "hostname": hostname, "type": "A", "priority": "0", "destination": currIP, "deleterecord": "false", "state": "yes"}]}
     jsonData = {'domainname': domain, 'dnsrecordset': dnsRecordSet, 'customernumber':apiSettings['user'], 'apikey':apiSettings['apikey'], 'apisessionid':apiSettings['apisessionid']}
-    print(jsonData)
-    callPhpApi(apiSettings['api'], 'updateDnsRecords', jsonData)
+    Response = callPhpApi(apiSettings['api'], 'updateDnsRecords', jsonData)
+    return {'data': jsonData, 'response': Response}
 
 
 def sendLogMail(content, mailSettings, receiver):
@@ -64,31 +68,47 @@ def sendLogMail(content, mailSettings, receiver):
 
 
 def main():
-    logFilename = 'dynDNS.log'
-    log.basicConfig(filename=logFilename, level=log.INFO)
-
+    logFilename = '/var/logs/dynDNS/dynDNS.log'
+    log.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', filename=logFilename, level=log.INFO, datefmt='%Y-%m-%d %H:%M:%S')
+    
+    script_dir = Path(__file__).parent.absolute()
     load_dotenv()
-    load_dotenv('credentials.env')
+    env_path = os.path.join(script_dir, 'credentials.env')
+    load_dotenv(env_path)
 
     mailSettings = {'sender': os.getenv('MAIL_SENDER'), 'password': os.getenv('MAIL_PW'), 'server': os.getenv('MAIL_SERVER'), 'port': os.getenv('MAIL_PORT'), 'adminMail': os.getenv('MAIL_ADMIN')}
     mailContent = {'subject': 'Systemnotification from your dynDNS running on your Raspberry Pi', 'content': 'The Service {service} Today!'}
-
+    # print('env text: ', os.getcwd(), script_dir,  os.getenv('API_KEY'))
     apiSettings = {'api': os.getenv('API'), 'apikey': os.getenv('API_KEY'), 'apipassword': os.getenv('API_PW'), 'user': int(os.getenv('API_USER_ID'))}
     
+    log.info('dynDNS: started')
+
     try:
         currentExternalIP = getCurrentExternalIP()
+        log.info(f"dynDNS: currentIP: {currentExternalIP}")
+
         apiSettings['apisessionid'] = login2API(apiSettings)
-        updateDNSRecord(apiSettings, currentExternalIP, os.getenv('DOMAIN'), os.getenv('DNS_RECORD'), os.getenv('DNS_HOSTNAME'))
+        log.info(f"dynDNS: logged in with sessionID: {apiSettings['apisessionid']}")
+        DataResponse = updateDNSRecord(apiSettings, currentExternalIP, os.getenv('DOMAIN'), os.getenv('DNS_RECORD'), os.getenv('DNS_HOSTNAME'))
+    
+        if DataResponse['response']['status'] != 'success': 
+            raise Exception('API call failed')
+
+        log.info(f"dynDNS: updateDNSRecord {DataResponse['response']} with {DataResponse['data']}")
+
         logoutFromAPI(apiSettings)
+
         mailContent['content'] = mailContent['content'].format(service='run successful')
         mailContent['furtherContent'] = 'Your current External IP: ' + currentExternalIP
-        # sendLogMail(mailContent, mailSettings, os.getenv('MAIL_RECEIVER'))
-        log.info('dynDNS run successful Today!')
+        sendLogMail(mailContent, mailSettings, os.getenv('MAIL_RECEIVER'))
+
+        log.info('dynDNS: run successful Today!')
     except:
-        log.critical('dynDNS failed Today!')
+        log.critical(f"dynDNS failed: updateDNSRecord {DataResponse['response']} with {DataResponse['data']}")
+        log.critical('dynDNS: failed Today')
         mailContent['content'] = mailContent['content'].format(service='failed')
         mailContent['furtherContent'] = 'See {logFilename} for further informtaion'.format(logFilename=logFilename)
-        # sendLogMail(mailContent, mailSettings, os.getenv('MAIL_RECEIVER'))
+        sendLogMail(mailContent, mailSettings, os.getenv('MAIL_RECEIVER'))
 
 
 if __name__ == "__main__":
