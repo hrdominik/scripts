@@ -8,7 +8,7 @@ In case of any questions, feel free to [ask me](mailto:admin@hoehr.net)
 
 ### dynDNS
 
-Script for my Raspberry Pi that runs as an cronjob every 24h to get the current external ip of my Router and set it as an CNAME on my domain hoehr.net on the subdomain pi /
+Script for my Raspberry Pi that runs as an cronjob every 24h to get the current external ip of my Router and set it as an A on my domain hoehr.net on the subdomain pi /
 create an credentials.env in the same subfolder with your MAIL and API data to adapt
 
 ### statusCheck
