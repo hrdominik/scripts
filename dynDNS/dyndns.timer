@@ -1,0 +1,16 @@
+# systemctl daemon-reload
+# systemctl enable dyndns.timer
+# systemctl start dyndns.timer
+
+# /etc/systemd/system/dyndns.timer
+[Unit]
+Description=Run Dynamic DNS Update every 3 hours
+Requires=dyndns.service
+
+[Timer]
+Unit=dyndns.service
+OnBootSec=5min
+OnUnitActiveSec=3h
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,16 @@
+# systemctl daemon-reload
+# systemctl enable speedtest.timer
+# systemctl start speedtest.timer
+
+# /etc/systemd/system/speedtest.timer
+[Unit]
+Description=Run Speedtest every 3 hours
+Requires = speedtest.service
+
+[Timer]
+Unit=speedtest.service
+OnBootSec=5min
+OnUnitActiveSec=3h
+
+[Install]
+WantedBy=timers.target
