@@ -68,7 +68,7 @@ def sendLogMail(content, mailSettings, receiver):
 
 
 def main():
-    logFilename = '/var/logs/dynDNS/dynDNS.log'
+    logFilename = '/stacks/logs/dynDNS/dynDNS.log'
     log.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', filename=logFilename, level=log.INFO, datefmt='%Y-%m-%d %H:%M:%S')
     
     script_dir = Path(__file__).parent.absolute()
