@@ -16,7 +16,7 @@ import json
 
 def speedTest():
     # speedtest -f json
-    subP = subprocess.Popen("speedtest -f json", shell=True, stdout=subprocess.PIPE)
+    subP = subprocess.Popen("speedtest --accept-gdpr -f json", shell=True, stdout=subprocess.PIPE)
     if  subP.stderr:
         raise Exception
     else:
