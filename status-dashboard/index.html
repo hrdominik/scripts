@@ -11,9 +11,16 @@
 <div class="container py-4" id="main-container">
 	<div class="d-flex justify-content-between align-items-center mb-4">
 		<h1 class="mb-0">Service Status Dashboard</h1>
-		<div class="form-check form-switch">
-			<input class="form-check-input" type="checkbox" id="darkModeSwitch">
-			<label class="form-check-label" for="darkModeSwitch">Dark mode</label>
+		<div class="d-flex align-items-center gap-3">
+			<div class="form-check form-switch">
+				<input class="form-check-input" type="checkbox" id="darkModeSwitch">
+				<label class="form-check-label" for="darkModeSwitch">Dark mode</label>
+			</div>
+			<div class="form-check form-switch">
+				<input class="form-check-input" type="checkbox" id="autoRefreshSwitch" checked>
+				<label class="form-check-label" for="autoRefreshSwitch">Auto-refresh</label>
+			</div>
+			<button class="btn btn-outline-secondary" id="manualRefreshBtn" title="Refresh now"><i class="fa-solid fa-rotate"></i></button>
 		</div>
 	</div>
 	<div class="mb-3" id="type-filters"></div>
@@ -27,6 +34,10 @@ const API_ROOT = '/monitoring/api'; // Set window.MONITORING_API_ROOT before thi
 // Dark mode logic
 const mainContainer = document.getElementById('main-container');
 const darkModeSwitch = document.getElementById('darkModeSwitch');
+const autoRefreshSwitch = document.getElementById('autoRefreshSwitch');
+const manualRefreshBtn = document.getElementById('manualRefreshBtn');
+let autoRefreshInterval = null;
+
 function setDarkMode(enabled) {
 	if (enabled) {
 		document.body.classList.add('bg-dark', 'text-light');
@@ -43,6 +54,31 @@ darkModeSwitch.addEventListener('change', (e) => setDarkMode(e.target.checked));
 if (localStorage.getItem('monitoringDarkMode') === 'true') {
 	darkModeSwitch.checked = true;
 	setDarkMode(true);
+}
+
+function setAutoRefresh(enabled) {
+	if (enabled) {
+		if (!autoRefreshInterval) {
+			autoRefreshInterval = setInterval(fetchStatus, 10000);
+		}
+		localStorage.setItem('monitoringAutoRefresh', 'true');
+	} else {
+		if (autoRefreshInterval) {
+			clearInterval(autoRefreshInterval);
+			autoRefreshInterval = null;
+		}
+		localStorage.setItem('monitoringAutoRefresh', 'false');
+	}
+}
+autoRefreshSwitch.addEventListener('change', (e) => setAutoRefresh(e.target.checked));
+manualRefreshBtn.addEventListener('click', fetchStatus);
+// Initialize auto-refresh from localStorage
+if (localStorage.getItem('monitoringAutoRefresh') === 'false') {
+	autoRefreshSwitch.checked = false;
+	setAutoRefresh(false);
+} else {
+	autoRefreshSwitch.checked = true;
+	setAutoRefresh(true);
 }
 
 function getBadgeColor(status) {
@@ -126,7 +162,7 @@ function parseLogDescription(desc) {
 	const kvPairs = {};
 	rest.split(/\s+/).forEach(part => {
 		const kv = part.split(':');
-		if (kv.length === 2) kvPairs[kv[0]] = kv[1];
+		if (kv.length === 2 && kv[1].trim() !== '') kvPairs[kv[0]] = kv[1];
 	});
 	// Format download/upload/ping
 	let download = kvPairs.download ? formatBytes(Number(kvPairs.download)) : null;
@@ -134,12 +170,20 @@ function parseLogDescription(desc) {
 	let ping = kvPairs.ping ? `${kvPairs.ping} ms` : null;
 	// Build HTML
 	let html = '';
+	const mutedClass = darkModeSwitch.checked ? 'text-secondary' : 'text-muted';
 	if (dateStr) {
 		const dateObj = new Date(dateStr.replace(' ', 'T'));
-		html += `<div><strong>Date:</strong> ${dateObj.toLocaleString()} <span class="text-muted">(${timeAgo(dateObj)})</span></div>`;
+		html += `<div><strong>Since </strong> ${dateObj.toLocaleString()} <span class="${mutedClass}">(${timeAgo(dateObj)})</span></div>`;
 	}
-	if (logLevel) html += `<div><strong>Level:</strong> ${logLevel}</div>`;
+	if (logLevel) {
+		let labelClass = 'bg-info';
+		if (logLevel === 'ERROR') labelClass = 'bg-danger';
+		else if (logLevel === 'WARN') labelClass = 'bg-warning';
+		else if (logLevel === 'DEBUG') labelClass = 'bg-secondary';
+		html += `<div><span class="badge ${labelClass} text-dark">${logLevel}</span></div>`;
+	}
 	Object.entries(kvPairs).forEach(([k, v]) => {
+		if (v.trim() === '') return;
 		if (k === 'download' && download) html += `<div><strong>Download:</strong> ${download}</div>`;
 		else if (k === 'upload' && upload) html += `<div><strong>Upload:</strong> ${upload}</div>`;
 		else if (k === 'ping' && ping) html += `<div><strong>Ping:</strong> ${ping}</div>`;
@@ -153,12 +197,17 @@ function parseSystemdDescription(desc) {
 	const dateMatch = desc.match(/([A-Za-z]{3} \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [A-Z]+)/);
 	let dateStr = dateMatch ? dateMatch[0] : null;
 	let rest = desc;
-	if (dateStr) rest = rest.replace(dateStr, '').trim();
+	if (dateStr) rest = rest.replace(dateStr, '').replace('since', '').trim();
+	if (dateStr) {
+		const split = rest.split(';');
+		rest = split[0].trim();
+	}
 	let html = '';
+	const mutedClass = darkModeSwitch.checked ? 'text-secondary' : 'text-muted';
 	if (dateStr) {
 		// Try to parse systemd date
 		const dateObj = new Date(dateStr.replace(/([A-Za-z]{3}) /, '').replace(' CEST', '').replace(' ', 'T'));
-		html += `<div><strong>Date:</strong> ${dateObj.toLocaleString()} <span class="text-muted">(${timeAgo(dateObj)})</span></div>`;
+		html += `<div><strong>Since </strong> ${dateObj.toLocaleString()} <span class="${mutedClass}">(${timeAgo(dateObj)})</span></div>`;
 	}
 	html += `<pre class="mb-0">${rest}</pre>`;
 	return html;
@@ -232,7 +281,6 @@ function fetchStatus() {
 }
 
 fetchStatus();
-setInterval(fetchStatus, 10000); // Refresh every 10s
 </script>
 </body>
 </html>
