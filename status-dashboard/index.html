@@ -11,7 +11,10 @@
 	<h1 class="mb-4">Service Status Dashboard</h1>
 	<div id="services-list" class="row g-3"></div>
 </div>
+
 <script>
+// Configurable API root
+const API_ROOT = 'raspberrypi.local/monitoring/api'; // Set window.MONITORING_API_ROOT before this script to override
 
 function getBadgeColor(status) {
 	switch(status) {
@@ -25,7 +28,7 @@ function getBadgeColor(status) {
 }
 
 function fetchStatus() {
-	fetch('/api/status')
+	fetch(`${API_ROOT}/status`)
 		.then(res => res.json())
 		.then(data => {
 			const list = document.getElementById('services-list');

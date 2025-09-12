@@ -121,5 +121,9 @@ def api_status_service(service_name):
 			return jsonify({service_name: get_service_status(service)})
 	return jsonify({'error': 'Service not found'}), 404
 
+@app.route('/', methods=['GET'])
+def api_root():
+	return jsonify({'message': 'Welcome to the Service Status API'})
+
 if __name__ == '__main__':
 	app.run(host='0.0.0.0', port=5000)
