@@ -36,8 +36,9 @@ STATUS_WARNING = 'warning'
 def get_log_status(service):
 	log_path = service.get('path')
 	grep = service.get('grep')
+	stype = service.get('type', 'log')
 	if not log_path or not os.path.exists(log_path):
-		return {'status': STATUS_ERROR, 'description': 'Log file not found'}
+		return {'status': STATUS_ERROR, 'description': 'Log file not found', 'type': stype}
 	try:
 		if grep:
 			result = subprocess.run(['grep', grep, log_path], capture_output=True, text=True)
@@ -46,16 +47,16 @@ def get_log_status(service):
 			with open(log_path, 'r') as f:
 				lines = f.readlines()
 				line = lines[-1].strip() if lines else 'Log empty'
-		# If grep found something, treat as running, else inactive
 		status = STATUS_RUNNING if line and line != 'No match' and line != 'Log empty' else STATUS_INACTIVE
-		return {'status': status, 'description': line}
+		return {'status': status, 'description': line, 'type': stype}
 	except Exception as e:
-		return {'status': STATUS_ERROR, 'description': str(e)}
+		return {'status': STATUS_ERROR, 'description': str(e), 'type': stype}
 
 def get_systemd_status(service):
 	name = service.get('service')
+	stype = service.get('type', 'systemd')
 	if not name:
-		return {'status': STATUS_ERROR, 'description': 'No service name'}
+		return {'status': STATUS_ERROR, 'description': 'No service name', 'type': stype}
 	try:
 		result = subprocess.run(['systemctl', 'is-active', name], capture_output=True, text=True)
 		status_raw = result.stdout.strip()
@@ -69,14 +70,15 @@ def get_systemd_status(service):
 			status = STATUS_FAILED
 		else:
 			status = STATUS_ERROR
-		return {'status': status, 'description': desc}
+		return {'status': status, 'description': desc, 'type': stype}
 	except Exception as e:
-		return {'status': STATUS_ERROR, 'description': str(e)}
+		return {'status': STATUS_ERROR, 'description': str(e), 'type': stype}
 
 def get_docker_status(service):
 	name = service.get('container')
+	stype = service.get('type', 'docker')
 	if not name:
-		return {'status': STATUS_ERROR, 'description': 'No container name'}
+		return {'status': STATUS_ERROR, 'description': 'No container name', 'type': stype}
 	try:
 		result = subprocess.run(['docker', 'ps', '--filter', f'name={name}', '--format', '{{.Status}}'], capture_output=True, text=True)
 		status_raw = result.stdout.strip()
@@ -89,9 +91,9 @@ def get_docker_status(service):
 			status = STATUS_FAILED
 		else:
 			status = STATUS_ERROR
-		return {'status': status, 'description': desc}
+		return {'status': status, 'description': desc, 'type': stype}
 	except Exception as e:
-		return {'status': STATUS_ERROR, 'description': str(e)}
+		return {'status': STATUS_ERROR, 'description': str(e), 'type': stype}
 
 def get_service_status(service):
 	stype = service.get('type')
