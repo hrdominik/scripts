@@ -1,0 +1,12 @@
+[Unit]
+Description=Monitoring Flask API Service
+After=network.target
+
+[Service]
+User=pi
+WorkingDirectory=/var/scripts/status-dashboard
+ExecStart=/usr/bin/python3 status-api.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -27,3 +27,7 @@ Simple tournament-planning tool in plain html (with bootstrap) and js for quick 
 ### endnotenrechner
 
 Basic calculator for the finalgrade of Winfo-Studies at the University Paderborn. May also work for other Universities and degrees
+
+### monitoring-dashboard
+
+Simple dashboard to monitor local services (systemd, docker, log files) via a Flask API and a Bootstrap frontend.
