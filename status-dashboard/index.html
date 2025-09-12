@@ -160,14 +160,19 @@ function parseLogDescription(desc) {
 	if (logLevel) rest = rest.replace(logLevel, '').trim();
 	// Key-value pairs
 	const kvPairs = {};
-	rest.split(/\s+/).forEach(part => {
-		const kv = part.split(':');
-		if (kv.length === 2 && kv[1].trim() !== '') kvPairs[kv[0]] = kv[1];
+	let parts = rest.split(",");
+	parts.forEach(part => {
+		part = part.trim();
+		let kv = part.split(':');
+		if (kv.length >= 2) {
+        const key = kv[kv.length - 2].trim();   // use the last valid key
+        const value = kv[kv.length - 1].trim();
+        kvPairs[key] = value;
+        }
 	});
 	// Format download/upload/ping
 	let download = kvPairs.download ? formatBytes(Number(kvPairs.download)) : null;
 	let upload = kvPairs.upload ? formatBytes(Number(kvPairs.upload)) : null;
-	let ping = kvPairs.ping ? `${kvPairs.ping} ms` : null;
 	// Build HTML
 	let html = '';
 	const mutedClass = darkModeSwitch.checked ? 'text-secondary' : 'text-muted';
@@ -184,11 +189,11 @@ function parseLogDescription(desc) {
 	}
 	Object.entries(kvPairs).forEach(([k, v]) => {
 		if (v.trim() === '') return;
-		if (k === 'download' && download) html += `<div><strong>Download:</strong> ${download}</div>`;
-		else if (k === 'upload' && upload) html += `<div><strong>Upload:</strong> ${upload}</div>`;
-		else if (k === 'ping' && ping) html += `<div><strong>Ping:</strong> ${ping}</div>`;
+		if (k === 'download') html += `<div><strong>${k}:</strong> ${kvPairs.download ? formatBytes(Number(kvPairs.download)) : null}</div>`;
+		else if (k === 'upload') html += `<div><strong>${k}:</strong> ${kvPairs.upload ? formatBytes(Number(kvPairs.upload)) : null}</div>`;
 		else html += `<div><strong>${k}:</strong> ${v}</div>`;
 	});
+    html += `<div class="${mutedClass}">${rest}</div>`;
 	return html || `<pre class="mb-0">${desc}</pre>`;
 }
 
