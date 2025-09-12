@@ -50,7 +50,7 @@ def get_log_status(service):
 		status = STATUS_RUNNING if line and line != 'No match' and line != 'Log empty' else STATUS_INACTIVE
 		return {'status': status, 'description': line, 'type': stype}
 	except Exception as e:
-		return {'status': STATUS_ERROR, 'description': str(e), 'type': stype}
+		return {'status': STATUS_ERROR, 'description': str(e), 'type': stype, 'displayName': service.get('displayName', service['name'])}
 
 def get_systemd_status(service):
 	name = service.get('service')
@@ -72,7 +72,7 @@ def get_systemd_status(service):
 			status = STATUS_ERROR
 		return {'status': status, 'description': desc, 'type': stype}
 	except Exception as e:
-		return {'status': STATUS_ERROR, 'description': str(e), 'type': stype}
+		return {'status': STATUS_ERROR, 'description': str(e), 'type': stype, 'displayName': service.get('displayName', service['name'])}
 
 def get_docker_status(service):
 	name = service.get('container')
@@ -93,7 +93,7 @@ def get_docker_status(service):
 			status = STATUS_ERROR
 		return {'status': status, 'description': desc, 'type': stype}
 	except Exception as e:
-		return {'status': STATUS_ERROR, 'description': str(e), 'type': stype}
+		return {'status': STATUS_ERROR, 'description': str(e), 'type': stype, 'displayName': service.get('displayName', service['name'])}
 
 def get_service_status(service):
 	stype = service.get('type')
