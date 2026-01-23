@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="de" data-bs-theme="dark">
     <head>
         <!-- Required meta tags -->
         <meta charset="utf-8">
@@ -24,10 +24,37 @@
             </style>
             <script>
                 window.onload = function() {
-                    saveGroups();
-                    saveSettings();
-                    saveResults();
-                };
+                    const game = JSON.parse(localStorage.getItem("turnierplan-game"))
+                    const settings = JSON.parse(localStorage.getItem("turnierplan-settings"))
+                    const gameResults = JSON.parse(localStorage.getItem("turnierplan-gameResults"))
+                    if (game != null){
+                        document.getElementById("countTeams").value = Object.keys(game).length;
+                        document.getElementById("countTeamsPlayer").value = game[Object.keys(game)[0]].length;
+                        generateGroups();
+                        for (let i = 0; i<Object.keys(game).length; i++){
+                            const group = Object.keys(game)[i]
+                            for (let j = 0; j<game[group].length; j++){
+                                document.getElementById(group+"_team"+j).value = game[group][j]
+                            }
+                        }
+                    }
+                    if (settings != null){
+                        document.getElementById("fieldCount").value = settings.fieldCount;
+                        document.getElementById("groupBreakCounter").value = settings.groupBreakCounter;
+                        document.getElementById("groupGameTime").value = settings.groupGameTime;
+                        document.getElementById("finalsGameTime").value = settings.finalsGameTime;
+                        document.getElementById("startTime").value = settings.startTime.split("T")[1].split(":")[0]+":"+settings.startTime.split("T")[1].split(":")[1];
+                        document.getElementById("KILLSWITCH").checked = settings.KILLSWITCH;
+                        document.getElementById("eighthPhase").checked = settings.eighthPhase;
+                    }
+                    if (gameResults != null){
+                        for (let phase of Object.keys(gameResults)){
+                            for (let game of Object.keys(gameResults[phase])){
+                                addResult(phase, game, gameResults[phase][game][0], gameResults[phase][game][1])
+                            }
+                        }
+                    };
+                }
             </script>
             <script>
                 var teamCount;
@@ -66,7 +93,7 @@
                     }
                     document.getElementById("group-tables-save").disabled = false;
                 }
-                function addResult(){
+                function addResult(pPhase, pGame, pResultA, pResultB){
                     const resultTableBody = document.getElementById("results-table-results");
                     const resultTableBodyRow = document.createElement('tr');
                     const resultTableBodyRowPhase = document.createElement('td');
@@ -79,17 +106,26 @@
                         resultTableBodyRowPhaseSelect.appendChild(opt);
                     }
                     resultTableBodyRowPhase.appendChild(resultTableBodyRowPhaseSelect);
+                    if (pPhase != null){
+                        resultTableBodyRowPhaseSelect.value = pPhase;
+                    }
                     resultTableBodyRow.appendChild(resultTableBodyRowPhase);
 
                     const resultTableBodyRowGame = document.createElement('td');
                     const resultTableBodyRowGameInput = document.createElement('input');
                     resultTableBodyRowGameInput.type = 'number';
+                    if (pGame != null){
+                        resultTableBodyRowGameInput.value = pGame;
+                    }
                     resultTableBodyRowGame.appendChild(resultTableBodyRowGameInput);
                     resultTableBodyRow.appendChild(resultTableBodyRowGame);
 
                     const resultTableBodyRowResultA = document.createElement('td');
                     const resultTableBodyRowResultAInput = document.createElement('input');
                     resultTableBodyRowResultAInput.type = 'number';
+                    if (pResultA != null){
+                        resultTableBodyRowResultAInput.value = pResultA;
+                    }
                     resultTableBodyRowResultA.appendChild(resultTableBodyRowResultAInput);
                     resultTableBodyRow.appendChild(resultTableBodyRowResultA);
 
@@ -102,6 +138,9 @@
                     const resultTableBodyRowResultB = document.createElement('td');
                     const resultTableBodyRowResultBInput = document.createElement('input');
                     resultTableBodyRowResultBInput.type = 'number';
+                    if (pResultB != null){
+                        resultTableBodyRowResultBInput.value = pResultB;
+                    }
                     resultTableBodyRowResultB.appendChild(resultTableBodyRowResultBInput);
                     resultTableBodyRow.appendChild(resultTableBodyRowResultB);
 
@@ -125,7 +164,8 @@
                         finalsGameTime: document.getElementById("finalsGameTime").value,
                         startTime: document.getElementById("startTime").value,
                         fieldCount: document.getElementById("fieldCount").value,
-                        KILLSWITCH: document.getElementById("KILLSWITCH").checked
+                        KILLSWITCH: document.getElementById("KILLSWITCH").checked,
+                        eighthPhase: document.getElementById("eighthPhase").checked
                     }
                     let tempDate = new Date();
                     tempDate.setHours(settings.startTime.split(":")[0])
@@ -157,6 +197,50 @@
                     console.log("### Ergebnisse: ", gameResults)
                     localStorage.setItem("turnierplan-gameResults", JSON.stringify(gameResults))
                 }
+                function exportAll(){
+                    // Export all data as JSON
+                    const game = JSON.parse(localStorage.getItem("turnierplan-game"))
+                    const settings = JSON.parse(localStorage.getItem("turnierplan-settings"))
+                    const gameResults = JSON.parse(localStorage.getItem("turnierplan-gameResults"))
+                    const data = {
+                        game: game,
+                        settings: settings,
+                        gameResults: gameResults
+                    }
+                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+                    const downloadAnchorNode = document.createElement('a');
+                    downloadAnchorNode.setAttribute("href",     dataStr);
+                    downloadAnchorNode.setAttribute("download", "turnierplan.json");
+                    document.body.appendChild(downloadAnchorNode); // required for firefox
+                    downloadAnchorNode.click();
+                    downloadAnchorNode.remove();
+                }
+                function importAll() {
+                    var input = document.createElement('input');
+                    input.type = 'file';
+                    input.onchange = e => { 
+                        var file = e.target.files[0]; 
+                        var reader = new FileReader();
+                        reader.readAsText(file,'UTF-8');
+                        reader.onload = readerEvent => {
+                            var content = readerEvent.target.result;
+                            var data = JSON.parse(content);
+                            localStorage.setItem("turnierplan-game", JSON.stringify(data.game))
+                            localStorage.setItem("turnierplan-settings", JSON.stringify(data.settings))
+                            localStorage.setItem("turnierplan-gameResults", JSON.stringify(data.gameResults))
+                            saveGroups();
+                            saveSettings();
+                            saveResults();
+                        }
+                    }
+                    input.click();
+                }
+                function resetAll(){
+                    localStorage.removeItem("turnierplan-game")
+                    localStorage.removeItem("turnierplan-settings")
+                    localStorage.removeItem("turnierplan-gameResults")
+                    location.reload();
+                }
             </script>
             <script>
                 console.log("### Turnierplan-Config v1.0 by hrdominik ###")
@@ -165,6 +249,9 @@
                 <div class="row">
                     <div class="col">
                         <h1 style="text-align: center;">Turnierplan Config</h1>
+                        <button class="btn btn-primary" id="export-all" onclick="exportAll()">Exportieren</button>
+                        <button class="btn btn-primary" id="import-all" onclick="importAll()">Importieren</button>
+                        <button class="btn btn-primary" id="import-all" onclick="resetAll()">Reset</button>
                         <a class="btn btn-primary float-end" href="../" target="_blank">Spielplan</a>
                     </div>
                 </div>
@@ -191,6 +278,9 @@
                                         <div class="row">
                                             <div class="col-6"><label>Spielzeit je Spiel (Gruppenphase): <input type="number"id="groupGameTime" value="10"/>Min.</label></div>
                                             <div class="col-6"><label>Spielzeit je Spiel (Finale): <input type="number"id="finalsGameTime" value="15"/>Min.</label></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col"><label><input type="checkbox" id="eighthPhase" disabled/> Achtelfinale</label></div>
                                         </div>
                                         <div class="row">
                                             <div class="col"><label class="float-end" style="color: red;"><input type="checkbox" id="KILLSWITCH" /> KILLSWITCH</label></div>

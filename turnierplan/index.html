@@ -331,19 +331,48 @@
                 function genQuarters(){
                     if (Object.keys(game).length > 1 && Object.keys(winner.groups).length > 1){
                         settings.startTime = new Date(settings.startTime.getTime() + settings.groupGameTime*settings.groupBreakCounter*60000)
+                        
+                        let groupWinners = [];
+                        let groupRunnersUp = [];
+                        for (let gr in winner.groups) {
+                            groupWinners.push(winner.groups[gr].first);
+                            groupRunnersUp.push(winner.groups[gr].second);
+                        }
+                        groupRunnersUp.sort((a, b) => points[b] - points[a]);
+
+                        let bestRunnersUp = groupRunnersUp.slice(0, 8 - groupWinners.length);
+                        let advancingTeams = groupWinners.concat(bestRunnersUp);
+
                         let tempField2 = 1;
                         let switcher = +1;
-                        for (let grI in Object.keys(winner.groups)){
-                            grI = parseInt(grI);
-                            generateGame("quarterfinals", settings.startTime.toLocaleTimeString('de-DE').substring(0, 5), tempField2, false, winner.groups[Object.keys(winner.groups)[grI]].first, winner.groups[Object.keys(winner.groups)[grI+switcher]].second);
+                        // for (let grI in Object.keys(winner.groups)){
+                        //     grI = parseInt(grI);
+                        //     generateGame("quarterfinals", settings.startTime.toLocaleTimeString('de-DE').substring(0, 5), tempField2, false, winner.groups[Object.keys(winner.groups)[grI]].first, winner.groups[Object.keys(winner.groups)[grI+switcher]].second);
                             
-                            if (tempField2 < settings.fieldCount){
+                        //     if (tempField2 < settings.fieldCount){
+                        //         tempField2++;
+                        //     } else {
+                        //         tempField2 = 1;
+                        //         settings.startTime = new Date(settings.startTime.getTime() + settings.finalsGameTime*60000)
+                        //     }
+                        //     switcher = (switcher == +1 ? -1 : +1)
+                        // }
+                        for (let i = 0; i < advancingTeams.length; i += 2) {
+                            generateGame(
+                                "quarterfinals",
+                                settings.startTime.toLocaleTimeString('de-DE').substring(0, 5),
+                                tempField2,
+                                false,
+                                advancingTeams[i],        // Erstes Team
+                                advancingTeams[i + 1]     // Zweites Team
+                            );
+
+                            if (tempField2 < settings.fieldCount) {
                                 tempField2++;
                             } else {
                                 tempField2 = 1;
-                                settings.startTime = new Date(settings.startTime.getTime() + settings.finalsGameTime*60000)
+                                settings.startTime = new Date(settings.startTime.getTime() + settings.finalsGameTime * 60000);
                             }
-                            switcher = (switcher == +1 ? -1 : +1)
                         }
                     }
                     if (Object.keys(game).length === 1){

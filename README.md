@@ -28,6 +28,10 @@ Simple tournament-planning tool in plain html (with bootstrap) and js for quick 
 
 Basic calculator for the finalgrade of Winfo-Studies at the University Paderborn. May also work for other Universities and degrees
 
-### monitoring-dashboard
+### status-dashboard
 
 Simple dashboard to monitor local services (systemd, docker, log files) via a Flask API and a Bootstrap frontend.
+
+### precommit-tools
+
+Collection of git pre-commit hooks for various purposes (e.g., code formatting, linting, etc.).
