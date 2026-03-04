@@ -1,0 +1,13 @@
+[Unit]
+Description=Log-parser API (port 5001) – speedtest & dyndns log endpoints
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/stacks/git/scripts/status-dashboard
+ExecStart=/usr/bin/python3 /stacks/git/scripts/status-dashboard/log-parser-api.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
