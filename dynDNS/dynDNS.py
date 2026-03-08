@@ -24,10 +24,17 @@ import smtplib, ssl
 from pathlib import Path
 
 def getCurrentExternalIP():
-    Response = requests.get('https://ipinfo.io/ip')
+    Response = requests.get('https://ipv4.icanhazip.com', timeout=10)
     if Response.status_code != requests.codes.ok:
         raise Exception
-    return Response.text
+    return Response.text.strip()
+
+
+def getCurrentExternalIPv6():
+    Response = requests.get('https://ipv6.icanhazip.com', timeout=10)
+    if Response.status_code != requests.codes.ok:
+        raise Exception
+    return Response.text.strip()
 
 
 def callPhpApi(api, action, jsonData):
@@ -48,8 +55,8 @@ def logoutFromAPI(apiSettings):
     callPhpApi(apiSettings['api'], 'logout', jsonData)
 
 
-def updateDNSRecord(apiSettings, currIP, domain, record, hostname):
-    dnsRecordSet = {'dnsrecords': [{"id":record, "hostname": hostname, "type": "A", "priority": "0", "destination": currIP, "deleterecord": "false", "state": "yes"}]}
+def updateDNSRecord(apiSettings, currIP, domain, record, hostname, record_type='A'):
+    dnsRecordSet = {'dnsrecords': [{"id":record, "hostname": hostname, "type": record_type, "priority": "0", "destination": currIP, "deleterecord": "false", "state": "yes"}]}
     jsonData = {'domainname': domain, 'dnsrecordset': dnsRecordSet, 'customernumber':apiSettings['user'], 'apikey':apiSettings['apikey'], 'apisessionid':apiSettings['apisessionid']}
     Response = callPhpApi(apiSettings['api'], 'updateDnsRecords', jsonData)
     return {'data': jsonData, 'response': Response}
@@ -84,22 +91,39 @@ def main():
     log.info('dynDNS: started')
 
     try:
-        currentExternalIP = getCurrentExternalIP()
-        log.info(f"dynDNS: currentIP: {currentExternalIP}")
+        currentExternalIP = None
+        if os.getenv('IPV4_ENABLED', 'true').lower() == 'true':
+            currentExternalIP = getCurrentExternalIP()
+            log.info(f"dynDNS: currentIP: {currentExternalIP}")
 
-        apiSettings['apisessionid'] = login2API(apiSettings)
-        log.info(f"dynDNS: logged in with sessionID: {apiSettings['apisessionid']}")
-        DataResponse = updateDNSRecord(apiSettings, currentExternalIP, os.getenv('DOMAIN'), os.getenv('DNS_RECORD'), os.getenv('DNS_HOSTNAME'))
+            apiSettings['apisessionid'] = login2API(apiSettings)
+            log.info(f"dynDNS: logged in with sessionID: {apiSettings['apisessionid']}")
+            DataResponse = updateDNSRecord(apiSettings, currentExternalIP, os.getenv('DOMAIN'), os.getenv('DNS_RECORD'), os.getenv('DNS_HOSTNAME'))
     
-        if DataResponse['response']['status'] != 'success': 
-            raise Exception('API call failed')
+            if DataResponse['response']['status'] != 'success': 
+                raise Exception('API call failed')
 
-        log.info(f"dynDNS: updateDNSRecord {DataResponse['response']} with {DataResponse['data']}")
+            log.info(f"dynDNS: updateDNSRecord {DataResponse['response']} with {DataResponse['data']}")
+
+        currentExternalIPv6 = None
+        if os.getenv('IPV6_ENABLED', 'false').lower() == 'true':
+            currentExternalIPv6 = getCurrentExternalIPv6()
+            log.info(f"dynDNS: currentIPv6: {currentExternalIPv6}")
+            DataResponseV6 = updateDNSRecord(
+                apiSettings, currentExternalIPv6, os.getenv('DOMAIN'),
+                os.getenv('DNS_RECORD_AAAA'),
+                os.getenv('DNS_HOSTNAME_AAAA', os.getenv('DNS_HOSTNAME')),
+                record_type='AAAA'
+            )
+            if DataResponseV6['response']['status'] != 'success':
+                raise Exception('AAAA API call failed')
+            log.info(f"dynDNS: updateAAAARecord {DataResponseV6['response']}")
 
         logoutFromAPI(apiSettings)
 
         mailContent['content'] = mailContent['content'].format(service='run successful')
-        mailContent['furtherContent'] = 'Your current External IP: ' + currentExternalIP
+        ipv6_info = f', IPv6: {currentExternalIPv6}' if currentExternalIPv6 else ''
+        mailContent['furtherContent'] = 'Your current External IP: ' + currentExternalIP + ipv6_info
         sendLogMail(mailContent, mailSettings, os.getenv('MAIL_RECEIVER'))
 
         log.info('dynDNS: run successful Today!')
