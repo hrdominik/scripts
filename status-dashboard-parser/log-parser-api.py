@@ -74,13 +74,15 @@ def history():
 _DYNDNS_IP_RE   = re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s+INFO\s+dynDNS: currentIP: ([\d.]+)')
 _DYNDNS_OK_RE   = re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s+INFO\s+dynDNS: run successful')
 _DYNDNS_FAIL_RE = re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s+CRITICAL\s+dynDNS')
+_DYNDNS_IPv6_RE = re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s+INFO\s+dynDNS: currentIPv6: ([\da-fA-F:]+)')
 
 
 def parse_dyndns_log() -> dict:
     if not os.path.exists(DYNDNS_LOG_FILE):
-        return {'status': 'unknown', 'status_label': '? no log file', 'timestamp': None, 'ip': None}
+        return {'status': 'unknown', 'status_label': '? no log file', 'timestamp': None, 'ip': None, 'ipv6': None}
 
     last_ip       = None
+    last_ipv6     = None
     last_ok_ts    = None
     last_fail_ts  = None
     last_fail_msg = None
@@ -90,6 +92,10 @@ def parse_dyndns_log() -> dict:
             m = _DYNDNS_IP_RE.search(line)
             if m:
                 last_ip = m.group(2)
+                continue
+            m = _DYNDNS_IPv6_RE.search(line)
+            if m:
+                last_ipv6 = m.group(2)
                 continue
             m = _DYNDNS_OK_RE.search(line)
             if m:
@@ -109,6 +115,7 @@ def parse_dyndns_log() -> dict:
             'status_label': '\u2713 OK',
             'timestamp':    last_ok_ts,
             'ip':           last_ip,
+	    'ipv6':         last_ipv6,
         }
     else:
         return {
@@ -116,7 +123,8 @@ def parse_dyndns_log() -> dict:
             'status_label': '\u2717 FAILED',
             'timestamp':    last_fail_ts,
             'ip':           last_ip,
-            'error':        last_fail_msg,
+            'ipv6':         last_ipv6,
+	    'error':        last_fail_msg,
         }
 
 
