@@ -91,15 +91,16 @@ def main():
     log.info('dynDNS: started')
 
     try:
+        apiSettings['apisessionid'] = login2API(apiSettings)
+        log.info(f"dynDNS: logged in with sessionID: {apiSettings['apisessionid']}")
+
         currentExternalIP = None
-        if os.getenv('IPV4_ENABLED', 'true').lower() == 'true':
+        if os.getenv('IPV4_ENABLED', 'false').lower() == 'true':
             currentExternalIP = getCurrentExternalIP()
             log.info(f"dynDNS: currentIP: {currentExternalIP}")
 
-            apiSettings['apisessionid'] = login2API(apiSettings)
-            log.info(f"dynDNS: logged in with sessionID: {apiSettings['apisessionid']}")
             DataResponse = updateDNSRecord(apiSettings, currentExternalIP, os.getenv('DOMAIN'), os.getenv('DNS_RECORD'), os.getenv('DNS_HOSTNAME'))
-    
+
             if DataResponse['response']['status'] != 'success': 
                 raise Exception('API call failed')
 
@@ -122,8 +123,9 @@ def main():
         logoutFromAPI(apiSettings)
 
         mailContent['content'] = mailContent['content'].format(service='run successful')
+        ipv4_info = f', IPv4: {currentExternalIP}' if currentExternalIP else ''
         ipv6_info = f', IPv6: {currentExternalIPv6}' if currentExternalIPv6 else ''
-        mailContent['furtherContent'] = 'Your current External IP: ' + currentExternalIP + ipv6_info
+        mailContent['furtherContent'] = 'Your current External IP: ' + ipv4_info + ipv6_info
         sendLogMail(mailContent, mailSettings, os.getenv('MAIL_RECEIVER'))
 
         log.info('dynDNS: run successful Today!')
