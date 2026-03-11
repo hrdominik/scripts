@@ -13,10 +13,11 @@ run this as CronJob like the following:
 alternative run as a service like in the files in this repo
 
 @author: DHR
-@last-modified: 09.03.2025
+@last-modified: 11.03.2026
 """
 from email import message
 import os
+import socket
 from dotenv import load_dotenv
 import logging as log
 import requests
@@ -35,6 +36,15 @@ def getCurrentExternalIPv6():
     if Response.status_code != requests.codes.ok:
         raise Exception
     return Response.text.strip()
+
+def resolvedIP(hostname, record_type='A'):
+    """Return the currently resolved IP for the hostname, or None on failure."""
+    try:
+        family = socket.AF_INET6 if record_type == 'AAAA' else socket.AF_INET
+        results = socket.getaddrinfo(hostname, None, family)
+        return results[0][4][0]
+    except Exception:
+        return None
 
 
 def callPhpApi(api, action, jsonData):
@@ -89,49 +99,69 @@ def main():
     apiSettings = {'api': os.getenv('API'), 'apikey': os.getenv('API_KEY'), 'apipassword': os.getenv('API_PW'), 'user': int(os.getenv('API_USER_ID'))}
     
     log.info('dynDNS: started')
+    dynDNS_UPDATED = False
 
     try:
         apiSettings['apisessionid'] = login2API(apiSettings)
         log.info(f"dynDNS: logged in with sessionID: {apiSettings['apisessionid']}")
 
         currentExternalIP = None
+        DataResponse = None
         if os.getenv('IPV4_ENABLED', 'false').lower() == 'true':
             currentExternalIP = getCurrentExternalIP()
             log.info(f"dynDNS: currentIP: {currentExternalIP}")
 
-            DataResponse = updateDNSRecord(apiSettings, currentExternalIP, os.getenv('DOMAIN'), os.getenv('DNS_RECORD'), os.getenv('DNS_HOSTNAME'))
+            hostname_v4 = os.getenv('DNS_HOSTNAME')
+            resolvedIPv4 = resolvedIP(hostname_v4, 'A')
+            log.info(f"dynDNS: resolved IPv4 for {hostname_v4}: {resolvedIPv4}")
 
-            if DataResponse['response']['status'] != 'success': 
-                raise Exception('API call failed')
+            if resolvedIPv4 == currentExternalIP:
+                log.info(f"dynDNS: IPv4 unchanged ({currentExternalIP}), skipping update")
+            else:
 
-            log.info(f"dynDNS: updateDNSRecord {DataResponse['response']} with {DataResponse['data']}")
+                DataResponse = updateDNSRecord(apiSettings, currentExternalIP, os.getenv('DOMAIN'), os.getenv('DNS_RECORD'), hostname_v4)
+
+                if DataResponse['response']['status'] != 'success': 
+                    raise Exception('API call failed')
+                dynDNS_UPDATED = True
+                log.info(f"dynDNS: updateDNSRecord {DataResponse['response']} with {DataResponse['data']}")
 
         currentExternalIPv6 = None
+        DataResponseV6 = None
         if os.getenv('IPV6_ENABLED', 'false').lower() == 'true':
             currentExternalIPv6 = getCurrentExternalIPv6()
             log.info(f"dynDNS: currentIPv6: {currentExternalIPv6}")
-            DataResponseV6 = updateDNSRecord(
-                apiSettings, currentExternalIPv6, os.getenv('DOMAIN'),
-                os.getenv('DNS_RECORD_AAAA'),
-                os.getenv('DNS_HOSTNAME_AAAA', os.getenv('DNS_HOSTNAME')),
-                record_type='AAAA'
-            )
-            if DataResponseV6['response']['status'] != 'success':
-                raise Exception('AAAA API call failed')
-            log.info(f"dynDNS: updateAAAARecord {DataResponseV6['response']}")
+            
+            hostname_v6 = os.getenv('DNS_HOSTNAME_AAAA', os.getenv('DNS_HOSTNAME'))
+            resolvedIPv6 = resolvedIP(hostname_v6, 'AAAA')
+            log.info(f"dynDNS: resolved IPv6 for {hostname_v6}: {resolvedIPv6}")
+
+            if resolvedIPv6 == currentExternalIPv6:
+                log.info(f"dynDNS: IPv6 unchanged ({currentExternalIPv6}), skipping update")
+            else:
+
+                DataResponseV6 = updateDNSRecord(apiSettings, currentExternalIPv6, os.getenv('DOMAIN'), os.getenv('DNS_RECORD_AAAA'), hostname_v6, record_type='AAAA')
+
+                if DataResponseV6['response']['status'] != 'success':
+                    raise Exception('AAAA API call failed')
+                dynDNS_UPDATED = True
+                log.info(f"dynDNS: updateAAAARecord {DataResponseV6['response']} with {DataResponseV6['data']}")
 
         logoutFromAPI(apiSettings)
 
-        mailContent['content'] = mailContent['content'].format(service='run successful')
-        ipv4_info = f', IPv4: {currentExternalIP}' if currentExternalIP else ''
-        ipv6_info = f', IPv6: {currentExternalIPv6}' if currentExternalIPv6 else ''
-        mailContent['furtherContent'] = 'Your current External IP: ' + ipv4_info + ipv6_info
-        sendLogMail(mailContent, mailSettings, os.getenv('MAIL_RECEIVER'))
+        if dynDNS_UPDATED:
+            mailContent['content'] = mailContent['content'].format(service='run successful')
+            ipv4_info = f', IPv4: {currentExternalIP}' if currentExternalIP else ''
+            ipv6_info = f', IPv6: {currentExternalIPv6}' if currentExternalIPv6 else ''
+            mailContent['furtherContent'] = 'Your current External IP: ' + ipv4_info + ipv6_info
+            sendLogMail(mailContent, mailSettings, os.getenv('MAIL_RECEIVER'))
 
-        log.info('dynDNS: run successful Today!')
+            log.info('dynDNS: run successful Today!')
     except:
-        log.critical(f"dynDNS failed: updateDNSRecord {DataResponse['response']} with {DataResponse['data']}")
-        log.critical('dynDNS: failed Today')
+        if DataResponse and 'response' in DataResponse:
+            log.critical(f"dynDNS failed: {DataResponse['response']} with {DataResponse['data']}")
+        if DataResponseV6 and 'response' in DataResponseV6:
+            log.critical(f"dynDNS failed: {DataResponseV6['response']} with {DataResponseV6['data']}")
         mailContent['content'] = mailContent['content'].format(service='failed')
         mailContent['furtherContent'] = 'See {logFilename} for further informtaion'.format(logFilename=logFilename)
         sendLogMail(mailContent, mailSettings, os.getenv('MAIL_RECEIVER'))
