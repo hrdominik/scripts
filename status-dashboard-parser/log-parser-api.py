@@ -75,7 +75,7 @@ _DYNDNS_IP_RE   = re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s+INFO\s+dy
 _DYNDNS_OK_RE   = re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s+INFO\s+dynDNS: run successful')
 _DYNDNS_FAIL_RE = re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s+CRITICAL\s+dynDNS')
 _DYNDNS_IPv6_RE = re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s+INFO\s+dynDNS: currentIPv6: ([\da-fA-F:]+)')
-
+_DYNDNS_START_RE = re.compile(r'dynDNS: started')
 
 def parse_dyndns_log() -> dict:
     if not os.path.exists(DYNDNS_LOG_FILE):
@@ -87,7 +87,17 @@ def parse_dyndns_log() -> dict:
     last_fail_ts  = None
     last_fail_msg = None
 
-    with open(DYNDNS_LOG_FILE) as f:
+        with open(DYNDNS_LOG_FILE) as f:
+        all_lines = f.readlines()
+
+    # Only consider lines from the last run
+    last_start = 0
+    for i, line in enumerate(all_lines):
+        if _DYNDNS_START_RE.search(line):
+            last_start = i
+    lines_to_parse = all_lines[last_start:]
+
+    for line in lines_to_parse:
         for line in f:
             m = _DYNDNS_IP_RE.search(line)
             if m:
