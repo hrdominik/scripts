@@ -42,8 +42,8 @@ def parse_speedtest_log(n: int = 20) -> list:
                 ts, dl, ul, ping, loc = m.groups()
                 results.append({
                     'timestamp':     ts,
-                    'download_mbps': round(int(dl) * 8 / 1_000_000, 2),
-                    'upload_mbps':   round(int(ul) * 8 / 1_000_000, 2),
+                    'download_mbps': round(int(dl) / 1_000_000, 2),
+                    'upload_mbps':   round(int(ul) / 1_000_000, 2),
                     'ping_ms':       float(ping),
                     'server':        loc.strip(),
                 })
