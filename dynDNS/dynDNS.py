@@ -111,7 +111,7 @@ def main():
             currentExternalIP = getCurrentExternalIP()
             log.info(f"dynDNS: currentIP: {currentExternalIP}")
 
-            hostname_v4 = os.getenv('DNS_HOSTNAME')
+            hostname_v4 = os.getenv('DNS_HOSTNAME') + '.' + os.getenv('DOMAIN')
             resolvedIPv4 = resolvedIP(hostname_v4, 'A')
             log.info(f"dynDNS: resolved IPv4 for {hostname_v4}: {resolvedIPv4}")
 
@@ -119,7 +119,7 @@ def main():
                 log.info(f"dynDNS: IPv4 unchanged ({currentExternalIP}), skipping update")
             else:
 
-                DataResponse = updateDNSRecord(apiSettings, currentExternalIP, os.getenv('DOMAIN'), os.getenv('DNS_RECORD'), hostname_v4)
+                DataResponse = updateDNSRecord(apiSettings, currentExternalIP, os.getenv('DOMAIN'), os.getenv('DNS_RECORD'), os.getenv('DNS_HOSTNAME'))
 
                 if DataResponse['response']['status'] != 'success': 
                     raise Exception('API call failed')
@@ -132,7 +132,7 @@ def main():
             currentExternalIPv6 = getCurrentExternalIPv6()
             log.info(f"dynDNS: currentIPv6: {currentExternalIPv6}")
             
-            hostname_v6 = os.getenv('DNS_HOSTNAME_AAAA', os.getenv('DNS_HOSTNAME'))
+            hostname_v6 = os.getenv('DNS_HOSTNAME_AAAA', os.getenv('DNS_HOSTNAME')) + '.' + os.getenv('DOMAIN')
             resolvedIPv6 = resolvedIP(hostname_v6, 'AAAA')
             log.info(f"dynDNS: resolved IPv6 for {hostname_v6}: {resolvedIPv6}")
 
@@ -140,7 +140,7 @@ def main():
                 log.info(f"dynDNS: IPv6 unchanged ({currentExternalIPv6}), skipping update")
             else:
 
-                DataResponseV6 = updateDNSRecord(apiSettings, currentExternalIPv6, os.getenv('DOMAIN'), os.getenv('DNS_RECORD_AAAA'), hostname_v6, record_type='AAAA')
+                DataResponseV6 = updateDNSRecord(apiSettings, currentExternalIPv6, os.getenv('DOMAIN'), os.getenv('DNS_RECORD_AAAA'), os.getenv('DNS_HOSTNAME_AAAA', os.getenv('DNS_HOSTNAME')), record_type='AAAA')
 
                 if DataResponseV6['response']['status'] != 'success':
                     raise Exception('AAAA API call failed')
