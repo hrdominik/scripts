@@ -87,7 +87,7 @@ def parse_dyndns_log() -> dict:
     last_fail_ts  = None
     last_fail_msg = None
 
-        with open(DYNDNS_LOG_FILE) as f:
+    with open(DYNDNS_LOG_FILE) as f:
         all_lines = f.readlines()
 
     # Only consider lines from the last run
@@ -98,7 +98,6 @@ def parse_dyndns_log() -> dict:
     lines_to_parse = all_lines[last_start:]
 
     for line in lines_to_parse:
-        for line in f:
             m = _DYNDNS_IP_RE.search(line)
             if m:
                 last_ip = m.group(2)
